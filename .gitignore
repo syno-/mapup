@@ -17,8 +17,11 @@ npm-debug.log
 # Build data
 ##############
 
-main/js/meetup.*
-main/css/*
+release/js/libs
+release/css/libs
+release/fonts
+release/**/*.min.js
 
-main/room_files/*
+release/js/index.js
+release/css/index.css
 

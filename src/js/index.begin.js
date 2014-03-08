@@ -1,5 +1,6 @@
 
 
+
 //reqLocation().done(function(ll) {
 //}).fail(function(e) {
 //});
@@ -19,7 +20,7 @@ function reqLocation() {
     return d.promise();
 }
 
-function map() {
+function init() {
     var mapOptions = {
         center: new google.maps.LatLng(34.701909, 135.494977),
         zoom: 12,
@@ -47,7 +48,7 @@ function map() {
 }
 
 $(function() {
-    map();
+    init();
     reqLocation().done(function(pos) {
         alert('detected: ' + pos);
     }).fail(function() {

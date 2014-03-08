@@ -1,6 +1,7 @@
 {
     "name": "MapRTCSpike",
     "version": "0.0.1",
+    "private": true,
     "devDependencies": {
         "connect": "~2.11.0",
         "grunt": "~0.4.1",

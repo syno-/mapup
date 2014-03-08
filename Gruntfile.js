@@ -2,18 +2,47 @@ module.exports = function(grunt) {
     "use strict";
 
     var path = {
-        release: "release/js", 
+        src: {
+            // dirs
+            js: "src/js/", 
+            css: "src/css/", 
+
+            // files
+            index: {
+                js: {
+                    out: 'index.js',
+                    min: 'index.min.js',
+                    files: [
+                        'index.begin.js',
+                        'index.geolocation.js',
+                    ]
+                },
+                css: {
+                    out: 'index.css',
+                    file: 'index.scss',
+                }
+            },
+        },
+        release: {
+            js: "release/js/", 
+            css: "release/css/", 
+        },
     };
-    var builds = [
-        buildPath + 'meetup.boot.js',
-        buildPath + 'meetup.main.js',
-        buildPath + 'meetup.notify.js',
-        buildPath + 'meetup.finish.js',
-        //buildPath + 'example.main.js',
-    ];
 
     grunt.initConfig({
         pkg: grunt.file.readJSON('package.json'),
+        jshint: {
+            all: ['Gruntfile.js', path.src.js + '**/*.js']
+        },
+        concat: {
+            options: {
+                separator: ';',
+            },
+            index: {
+                src: path.src.index.js.files,
+                dest: path.release.js + path.src.index.js.out,
+            },
+        },
         uglify: {
 //            build: {
 //                src: buildPath + '<%= pkg.name %>.js',
@@ -22,72 +51,61 @@ module.exports = function(grunt) {
             debug: {
                 options: {
 //                    banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n',
-                    beautify: true,
-                    compress: false,
+                    //beautify: true,
+                    //compress: true,
                 },
                 files: (function() {
                     var r = {};
-                    r[path.release + 'example.min.js'] = builds;
+                    r[path.release.js + path.src.index.js.min] = path.release.js + path.src.index.js.out;
                     return r;
                 })()
             }
         },
-        jshint: {
-            all: ['Gruntfile.js', buildPath + '**/*.js']
-        },
-        concat: {
-            options: {
-                separator: ';',
-            },
-            dist: {
-                src: builds,
-                dest: releasePath + 'example.js',
-            },
-        },
-        watch: {
-            scripts: {
-                files: [
-                    'Gruntfile.js',
-                    buildPath + '**/*.js',
-                    buildPath + '**/*.scss',
-                ],
-                tasks: ['default'],
-                options: {
-                    interrupt: true,
-                },
-            },
-        },
         sass: {
-            dist: {
+            index: {
                 options: {
                     style: 'expanded',
                 },
                 files: (function() {
                     var r = {};
-                    r[path.release + 'css/main.css'] = buildPath + main.scss;
+                    r[path.release.css + path.src.index.css.out] = path.src.css + path.src.index.css.file;
                     return r;
                 })()
             }
         },
+        watch: {
+            scripts: {
+                files: [
+                    'Gruntfile.js',
+                    path.src.js + '**/*.js',
+                    path.src.css + '**/*.scss',
+                ],
+                tasks: [
+                    'jshint',
+                    'concat',
+                    //'uglify',
+                    'sass',
+                ],
+                options: {
+                    interrupt: true,
+                },
+            },
+        },
     });
 
-    // Load the plugin that provides the "uglify" task.
     grunt.loadNpmTasks('grunt-contrib-concat');
     grunt.loadNpmTasks('grunt-contrib-uglify');
     grunt.loadNpmTasks('grunt-contrib-watch');
     grunt.loadNpmTasks('grunt-contrib-sass');
     grunt.loadNpmTasks('grunt-contrib-jshint');
 
-    // Default task(s).
-    grunt.registerTask('default', [
-                       'jshint',
-                       'concat',
-                       'sass',
-    ]);
-    grunt.registerTask('release', [
+    grunt.registerTask('indexjs', [
                        'jshint',
                        'concat',
                        'uglify',
                        'sass',
+    ]);
+    grunt.registerTask('release', [
+                       'indexjs',
     ]);
 };

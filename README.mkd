@@ -18,7 +18,7 @@ How to build (Develop)
 
 
 
-動作ブラウザ
+Browsers
 --------------
 
 - Firefox (latest)
