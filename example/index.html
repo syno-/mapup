@@ -6,24 +6,13 @@
 		<title></title>
 
 		<link rel="stylesheet" href="css/index.css">
-		<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyB91R_kufMhnZTSpymKpgOx6DmwJMKLDz0&sensor=false"></script>
-		
+
+		<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyB91R_kufMhnZTSpymKpgOx6DmwJMKLDz0&sensor=false&region=JP"></script>
+
 		<script type="text/javascript" src="js/libs/jquery-1.11.0.min.js"></script>
 		<script type="text/javascript" src="js/libs/bootstrap.min.js"></script>
 		<script type="text/javascript" src="js/libs/bootstrap-theme.min.js"></script>
-		<script type="text/javascript">
-			$(function() {
-				map();
-			});
-			function map() {
-				var mapOptions = {
-					center: new google.maps.LatLng(-34.397, 150.644),
-					zoom: 8,
-					mapTypeId: google.maps.MapTypeId.ROADMAP
-				};
-				var map = new google.maps.Map($('#map_canvas')[0], mapOptions);
-			}
-		</script>
+		<script type="text/javascript" src="js/index.js"></script>
 	</head>
 	<body>
 		<div id="map_canvas" style="width:100%; height:100%"></div>
