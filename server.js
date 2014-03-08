@@ -2,7 +2,7 @@ var os = require('os');
 var connect = require('connect');
 var port = 8080;
 connect.createServer(
-    connect.static(__dirname + '/main')
+    connect.static(__dirname + '/example')
 ).listen(port);
 
 //
