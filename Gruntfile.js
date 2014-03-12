@@ -39,7 +39,13 @@ module.exports = function(grunt) {
                 separator: ';',
             },
             index: {
-                src: path.src.index.js.files,
+                src: (function() {
+                    var list = [];
+                    path.src.index.js.files.forEach(function(file) {
+                        list.push(path.src.js + file);
+                    });
+                    return list;
+                })(),
                 dest: path.release.js + path.src.index.js.out,
             },
         },
