@@ -27,6 +27,13 @@ load()
 		rm -r $BS_FN
 	fi
 
+	local SPIN_JS_FILENAME="spin.min.js"
+	if [ ! -f $PATH_JSLIB/$SPIN_JS_FILENAME ]; then
+		echo "Downloading jQuery..."
+		mkdir -p $PATH_JSLIB
+		curl -o $PATH_JSLIB/${SPIN_JS_FILENAME} -L http://fgnass.github.io/spin.js/${SPIN_JS_FILENAME}
+	fi
+
 	echo "Done!"
 }
 

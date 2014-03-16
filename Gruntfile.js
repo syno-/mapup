@@ -14,7 +14,9 @@ module.exports = function(grunt) {
                     min: 'index.min.js',
                     files: [
                         'index.begin.js',
+                        'index.dialog.js',
                         'index.geolocation.js',
+                        'index.main.js',
                     ]
                 },
                 css: {
@@ -32,6 +34,9 @@ module.exports = function(grunt) {
     grunt.initConfig({
         pkg: grunt.file.readJSON('package.json'),
         jshint: {
+            options: {
+                ignores: [path.src.js + 'index.begin.js'],
+            },
             all: ['Gruntfile.js', path.src.js + '**/*.js']
         },
         concat: {
@@ -84,12 +89,20 @@ module.exports = function(grunt) {
                 files: [
                     'Gruntfile.js',
                     path.src.js + '**/*.js',
-                    path.src.css + '**/*.scss',
                 ],
                 tasks: [
                     'jshint',
                     'concat',
-                    //'uglify',
+                ],
+                options: {
+                    interrupt: true,
+                },
+            },
+            css: {
+                files: [
+                    path.src.css + '**/*.scss',
+                ],
+                tasks: [
                     'sass',
                 ],
                 options: {
