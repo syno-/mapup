@@ -37,6 +37,7 @@ load()
 	echo "Done!"
 }
 
+cd public
 load
 
 

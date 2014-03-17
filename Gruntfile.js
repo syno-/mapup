@@ -26,8 +26,8 @@ module.exports = function(grunt) {
             },
         },
         release: {
-            js: "release/js/", 
-            css: "release/css/", 
+            js: "public/js/", 
+            css: "public/css/", 
         },
     };
 

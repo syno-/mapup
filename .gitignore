@@ -17,11 +17,11 @@ npm-debug.log
 # Build data
 ##############
 
-release/js/libs
-release/css/libs
-release/fonts
-release/**/*.min.js
+public/js/libs
+public/css/libs
+public/fonts
+public/**/*.min.js
 
-release/js/index.js
-release/css/index.css
+public/js/index.js
+public/css/index.css
 
