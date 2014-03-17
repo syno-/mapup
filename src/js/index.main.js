@@ -1,7 +1,6 @@
 
 /**
  *
- *
  */
 Mps.prototype.init = function() {
 
@@ -30,6 +29,8 @@ Mps.prototype.init = function() {
         spin.hide();
     });
 
+    this.socketio();
+
     function putMyself(coords) {
         var ll = (coords) ?
             new google.maps.LatLng(coords.latitude, coords.longitude) :
@@ -53,6 +54,39 @@ Mps.prototype.init = function() {
             infoWindow.open(_map, marker);
         });
     }
+};
+
+Mps.prototype.socketio = function() {
+    Mps.log('socketio');
+
+    var socket = io.connect('http://localhost:8080/');
+    socket.on('connect', function(msg) {
+        console.log("connect");
+
+        $('#connectId').text("あなたの接続ID::" + socket.socket.transport.sessid);
+        $('#type').text("接続方式::" + socket.socket.transport.name);
+    });
+
+    socket.on('message', function(msg) {
+        $('#receiveMsg').text(msg.value);
+    });
+
+    $('#socket-send-msg').click(function(e) {
+        var msg = $('#message');
+        // メッセージを発射する
+        socket.emit('message', {
+            value: msg.val()
+        });
+    });
+    $('#socket-send-disconnect').click(function(e) {
+        var msg = socket.socket.transport.sessid + "は切断しました。";
+        // メッセージを発射する
+        socket.emit('message', {
+            value: msg
+        });
+        // socketを切断する
+        socket.disconnect();
+    });
 };
 
 $(function() {

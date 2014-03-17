@@ -1,22 +1,33 @@
 <!DOCTYPE html>
 <html lang="ja">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
-		<title></title>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+        <title>{{ title }}</title>
 
-		<link rel="stylesheet" href="/css/index.css">
-		<link rel="stylesheet" href="/css/libs/bootstrap-theme.min.css">
-		<link rel="stylesheet" href="/css/libs/bootstrap.min.css">
+        <link rel="stylesheet" href="/css/index.css">
+        <link rel="stylesheet" href="/css/libs/bootstrap-theme.min.css">
+        <link rel="stylesheet" href="/css/libs/bootstrap.min.css">
 
-		<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyB91R_kufMhnZTSpymKpgOx6DmwJMKLDz0&sensor=false&region=JP"></script>
+        <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyB91R_kufMhnZTSpymKpgOx6DmwJMKLDz0&sensor=false&region=JP"></script>
 
-		<script type="text/javascript" src="/js/libs/jquery-1.11.0.min.js"></script>
-		<script type="text/javascript" src="/js/libs/bootstrap.min.js"></script>
-		<script type="text/javascript" src="/js/libs/spin.min.js"></script>
-		<script type="text/javascript" src="/js/index.js"></script>
-	</head>
-	<body>
-		<div id="map_canvas" style="width:100%; height:100%"></div>
-	</body>
+        <script type="text/javascript" src="/js/libs/jquery-1.11.0.min.js"></script>
+        <script type="text/javascript" src="/js/libs/bootstrap.min.js"></script>
+        <script type="text/javascript" src="/js/libs/spin.min.js"></script>
+        <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+        <script type="text/javascript" src="/js/index.js"></script>
+    </head>
+    <body>
+        <div id="map_canvas"></div>
+
+        <div id="container" class="container">
+            <div id="connectId"></div>
+            <div id="type"></div>
+            <input type="text" id="message" value="">
+            <input type="button" value="メッセージを送る" id="socket-send-msg" />
+            <input type="button" value="切断する" id="socket-send-disconnect" />
+            <div id="receiveMsg"></div>
+        </div>
+
+    </body>
 </html>
