@@ -39,6 +39,7 @@ Mps.prototype.init = function() {
             map: _map,
             title: 'Click to zoom'
         });
+        _map.setCenter(marker.getPosition());
 
         var infoWindow = new google.maps.InfoWindow({
             content: 'Info Window',
