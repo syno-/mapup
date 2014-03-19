@@ -36,80 +36,101 @@ Mps.prototype.initSocketio = function() {
 };
 
 Mps.prototype.initFinished = function() {
-    var socket = this._socket;
+    var self = this;
+    var _socket = this._socket;
     var _refs = this._refs;
+    var _map = this._map;
 
     // init my location
-    _refs.spin.show();
-    Mps.Geo.current().done(function(pos) {
-        Mps.log('detected: ', pos);
-        putMyself(pos.coords);
-    }).fail(function(e) {
-        Mps.log('Geolocation: ' + e.message, e);
-        putMyself(null);
-    }).always(function(e) {
-        _refs.spin.hide();
-    });
+    //_refs.spin.show();
+    //Mps.Geo.current().done(function(pos) {
+    //    Mps.log('detected: ', pos);
+    //    this.setMyself({
+    //        lat: pos.coords.latitude,
+    //        lng: pos.coords.longitude,
+    //    });
+    //}).fail(function(e) {
+    //    Mps.log('Geolocation: ' + e.message, e);
+    //    this.setMyself(null);
+    //}).always(function(e) {
+    //    _refs.spin.hide();
+    //});
+
+    //google.maps.event.addListener(_map, 'click', function(e) {
+    //    self.setMyself({
+    //        lat: e.latLng.lat(),
+    //        lng: e.latLng.lng()
+    //    });
+    //});
 
     // socket.io
-    socket.on('connect', function(msg) {
+    _socket.on('connect', function(msg) {
         console.log("connect");
+        self.setMyself(null);
 
-        $('#connectId').text("あなたの接続ID::" + socket.socket.transport.sessid);
-        $('#type').text("接続方式::" + socket.socket.transport.name);
+        $('#connectId').text("あなたの接続ID::" + _socket.socket.transport.sessid);
+        $('#type').text("接続方式::" + _socket.socket.transport.name);
     });
 
-    socket.on('message', function(msg) {
+    _socket.on('message', function(msg) {
         $('#receiveMsg').text(msg.value);
     });
 
     $('#socket-send-msg').click(function(e) {
         var msg = $('#message');
         // メッセージを発射する
-        socket.emit('message', {
+        _socket.emit('message', {
             value: msg.val()
         });
     });
     $('#socket-send-disconnect').click(function(e) {
-        var msg = socket.socket.transport.sessid + "は切断しました。";
+        var msg = _socket.socket.transport.sessid + "は切断しました。";
         // メッセージを発射する
-        socket.emit('message', {
+        _socket.emit('message', {
             value: msg
         });
         // socketを切断する
-        socket.disconnect();
+        _socket.disconnect();
     });
 
+};
+Mps.prototype.setMyself = function(coords) {
     var _map = this._map;
-    function putMyself(coords) {
-        var ll = (coords) ?
-            new google.maps.LatLng(coords.latitude, coords.longitude) :
-            _map.getCenter();
-        this._marker = new google.maps.Marker({
-            position: ll,
-            map: __map,
+    var _socket = this._socket;
+
+    var ll = (coords) ?  new google.maps.LatLng(coords.lat, coords.lng) : null;
+    if (!this._marker) {
+        var _marker = this._marker = new google.maps.Marker({
+            position: (ll) ? ll : _map.getCenter(),
+            map: _map,
             draggable: true,
             title: 'Click to zoom'
         });
-        __map.setCenter(marker.getPosition());
+        _map.setCenter(_marker.getPosition());
 
-        google.maps.event.addListener(marker, 'click', function() {
+        google.maps.event.addListener(_marker, 'click', function() {
             _map.setZoom(12);
-            _map.setCenter(marker.getPosition());
+            _map.setCenter(_marker.getPosition());
 
-            infoWindow.open(_map, marker);
+            infoWindow.open(_map, _marker);
         });
-        google.maps.event.addListener(marker, 'dragend', function(e) {
+        google.maps.event.addListener(_marker, 'dragend', function(e) {
             Mps.log('marker dragged', e);
 
-            socket.emit({
+            _socket.emit({
                 value: {
                     lat: e.latLng.lat(),
                     lng: e.latLng.lng()
                 }
             });
-            //marker.setPosition(new google.maps.LatLng(e.latLng.lat(), e.latLng.lng()));
+            //_marker.setPosition(new google.maps.LatLng(e.latLng.lat(), e.latLng.lng()));
         });
+    } else {
+        if (ll) {
+            this._marker.setPosition(ll);
+        } else {
+            Mps.log('setMyself, coords is null.');
+        }
     }
 };
 
