@@ -43,15 +43,22 @@ var socketIO = require('socket.io');
 var io = socketIO.listen(server);
 
 io.sockets.on('connection', function(socket) {
-    console.log("connection");
+    console.log('connection, id=', socket.id);
 
-    socket.on('message', function(data) {
-        console.log("message");
-        io.sockets.emit('message', { value: data.value });
+    socket.on('disconnect', function() {
+        console.log('user.disconnect');
+        io.sockets.emit('user.disconnect', {
+            id: socket.id
+        });
     });
 
-    socket.on('disconnect', function(){
-        console.log("disconnect");
+    socket.on('user.marker.update', function(data) {
+        console.log('user.marker.update');
+        io.sockets.emit('user.marker.update', data);
+    });
+
+    io.sockets.emit('user.connect', {
+        id: socket.id
     });
 });
 

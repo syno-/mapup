@@ -37,8 +37,10 @@ Mps.Dialog = (function() {
     var DialogProto = Class.extend({
         init: function(dlgId) {
             this._dlgId = dlgId;
-            this._$ = $('#' + dlgId);
-        }
+        },
+        initBootstrap: function() {
+            this._$ = $('#' + this._dlgId);
+        },
     });
 
     var dialogs = {
@@ -68,14 +70,6 @@ Mps.Dialog = (function() {
                 //top: 'auto', // Top position relative to parent in px
                 //left: 'auto' // Left position relative to parent in px
             },
-            //_center: function() {
-            //    var pWidth = $(window).width();
-            //    var pHeight = $(window).height();
-            //    this._$.css({
-            //        left: (pWidth / 2) - (this._$.width() / 2),
-            //        top: (pHeight / 2) - (this._$.height() / 2)
-            //    });
-            //},
             show: function() {
                 //this._center();
                 this._$.show();
@@ -86,26 +80,21 @@ Mps.Dialog = (function() {
                 return this;
             },
             init: function(dlgId) {
+                this._super.apply(this, arguments);
+
                 var $body = $('body');
                 this._spinner = new Spinner(this.opts).spin($body[0]);
                 var $spinner = $(this._spinner.el).attr('id', dlgId);
 
-                //this._$.css({
-                //    'position': 'fixed',
-                //    'top': '50%',
-                //    'left': '50%',
-                //    'width': this.width + 'px',
-                //    'height': this.height + 'px',
-                //    'opacity': '0.8',
-                //    'border-radius': '10px',
-                //    'background-color': '#333333'
-                //});
-
-                this._super.apply(this, arguments);
+                DialogProto.prototype.initBootstrap.apply(this, arguments);
                 this.hide();
             }
-
-        })
+        }),
+        disconnected: DialogProto.extend({
+            init: function(dlgId) {
+                this._super.apply(this, arguments);
+            }
+        }),
     };
 
     return ctr;

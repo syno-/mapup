@@ -6,6 +6,8 @@ if (typeof Mps === "undefined") {
         }
         //console.log(this);
         this.init.apply(this, arguments);
+
+        return this;
     };
 
     /** デバッグフラグ。有効だとログが出力されます。 */

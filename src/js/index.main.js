@@ -5,10 +5,21 @@
 Mps.prototype.init = function() {
 
     // init maps
-    this._refs = {
-        $map: $('#map_canvas'),
+    this.r = {
+        $map: $('#map'),
+        $socketDisconnect: $('#socket-disconnect'),
+        $formUsername: $('#form-username'),
+        //$log: $('#log'),
+        log: new Mps.Log('log', {
+            limit: 100
+        }),
         spin: Mps.Dialog('spin')
     };
+
+    /**
+     * ユーザの一覧
+     */
+    this._users = [];
 
     this.initMaps();
     this.initSocketio();
@@ -16,17 +27,17 @@ Mps.prototype.init = function() {
 };
 
 Mps.prototype.initMaps = function() {
-    this._map = new google.maps.Map(this._refs.$map[0], {
+    this._map = new google.maps.Map(this.r.$map[0], {
         // Osaka
         center: new google.maps.LatLng(34.701909, 135.494977),
         zoom: 12,
         mapTypeId: google.maps.MapTypeId.ROADMAP
     });
 
-    this._infoWindow = new google.maps.InfoWindow({
-        content: 'Info Window',
-        size: new google.maps.Size(50,50)
-    });
+    //this._infoWindow = new google.maps.InfoWindow({
+    //    content: 'Info Window',
+    //    size: new google.maps.Size(50,50)
+    //});
 };
 
 Mps.prototype.initSocketio = function() {
@@ -38,11 +49,10 @@ Mps.prototype.initSocketio = function() {
 Mps.prototype.initFinished = function() {
     var self = this;
     var _socket = this._socket;
-    var _refs = this._refs;
     var _map = this._map;
 
     // init my location
-    //_refs.spin.show();
+    //self.r.spin.show();
     //Mps.Geo.current().done(function(pos) {
     //    Mps.log('detected: ', pos);
     //    this.setMyself({
@@ -53,48 +63,48 @@ Mps.prototype.initFinished = function() {
     //    Mps.log('Geolocation: ' + e.message, e);
     //    this.setMyself(null);
     //}).always(function(e) {
-    //    _refs.spin.hide();
-    //});
-
-    //google.maps.event.addListener(_map, 'click', function(e) {
-    //    self.setMyself({
-    //        lat: e.latLng.lat(),
-    //        lng: e.latLng.lng()
-    //    });
+    //    self.r.spin.hide();
     //});
 
     // socket.io
-    _socket.on('connect', function(msg) {
-        console.log("connect");
+    _socket.on('connect', function() {
+        console.log('connect', arguments);
         self.setMyself(null);
 
-        $('#connectId').text("あなたの接続ID::" + _socket.socket.transport.sessid);
-        $('#type').text("接続方式::" + _socket.socket.transport.name);
+        Mps.log('my connection ID: ' + _socket.socket.transport.sessid);
+        Mps.log('接続方式: ' + _socket.socket.transport.name);
+    });
+    _socket.on('user.connect', function(connection) {
+        console.log('user.connect', arguments);
+        self.r.log.add('ID[' + connection.id + '] さんが接続しました。');
+
+        // TODO: user add
+        //new Users();
+        //self._users.push()
+    });
+    _socket.on('user.disconnect', function(connection) {
+        console.log('user.disconnect', arguments);
+        self.r.log.add('ID[' + connection.id + '] さんが切断しました。');
     });
 
-    _socket.on('message', function(msg) {
-        $('#receiveMsg').text(msg.value);
+    _socket.on('user.marker.update', function(msg) {
+        Mps.log('user.marker.update', msg);
     });
 
-    $('#socket-send-msg').click(function(e) {
-        var msg = $('#message');
-        // メッセージを発射する
-        _socket.emit('message', {
-            value: msg.val()
-        });
-    });
-    $('#socket-send-disconnect').click(function(e) {
-        var msg = _socket.socket.transport.sessid + "は切断しました。";
-        // メッセージを発射する
-        _socket.emit('message', {
-            value: msg
-        });
-        // socketを切断する
+    this.r.$socketDisconnect.click(function(e) {
         _socket.disconnect();
+    });
+    this.r.$formUsername.on('submit', function(e) {
+        e.preventDefault();
+
+        var $this = $(this);
+        var $username = $this.find('*[name="username"]');
+        Mps.log('submit, username=' + $username.val());
     });
 
 };
 Mps.prototype.setMyself = function(coords) {
+    var self = this;
     var _map = this._map;
     var _socket = this._socket;
 
@@ -112,28 +122,30 @@ Mps.prototype.setMyself = function(coords) {
             _map.setZoom(12);
             _map.setCenter(_marker.getPosition());
 
-            infoWindow.open(_map, _marker);
+            //self._infoWindow.open(_map, _marker);
         });
         google.maps.event.addListener(_marker, 'dragend', function(e) {
             Mps.log('marker dragged', e);
 
-            _socket.emit({
-                value: {
-                    lat: e.latLng.lat(),
-                    lng: e.latLng.lng()
-                }
-            });
-            //_marker.setPosition(new google.maps.LatLng(e.latLng.lat(), e.latLng.lng()));
+            var data = {
+                lat: e.latLng.A,
+                lng: e.latLng.k
+            };
+            _socket.emit('user.marker.update', data);
+            Mps.log('marker emit', data);
         });
     } else {
         if (ll) {
             this._marker.setPosition(ll);
         } else {
-            Mps.log('setMyself, coords is null.');
+            //Mps.log('setMyself, coords is null.');
         }
     }
 };
 
 $(function() {
     var mps = Mps();
+    if (Mps.DEBUG) {
+        window.mps = mps;
+    }
 });

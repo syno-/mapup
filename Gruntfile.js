@@ -14,6 +14,7 @@ module.exports = function(grunt) {
                     min: 'index.min.js',
                     files: [
                         'index.begin.js',
+                        'index.log.js',
                         'index.dialog.js',
                         'index.geolocation.js',
                         'index.main.js',
