@@ -52,13 +52,23 @@ io.sockets.on('connection', function(socket) {
         });
     });
 
-    socket.on('user.marker.update', function(data) {
-        console.log('user.marker.update');
-        io.sockets.emit('user.marker.update', data);
+    /**
+     *
+     * @param {Object} 
+     * username: {String}
+     * marker {
+     *   lat: {Float}
+     *   lng: {Float}
+     * }
+     */
+    socket.on('user.connect', function(userdata) {
+        console.log('user.connect');
+        io.sockets.emit('user.connect', userdata);
+    });
+    socket.on('user.update', function(userdata) {
+        console.log('user.update');
+        io.sockets.emit('user.update', userdata);
     });
 
-    io.sockets.emit('user.connect', {
-        id: socket.id
-    });
 });
 

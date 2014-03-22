@@ -6,7 +6,7 @@ load()
 	local PATH_CSSLIB="css/libs"
 	local PATH_FONTS="fonts"
 
-	local JQUERY_FILENAME="jquery-1.11.0.min.js"
+	local JQUERY_FILENAME="jquery-2.1.0.min.js"
 	if [ ! -f $PATH_JSLIB/$JQUERY_FILENAME ]; then
 		echo "Downloading jQuery..."
 		mkdir -p $PATH_JSLIB

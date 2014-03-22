@@ -10,11 +10,36 @@ Mps.User = (function() {
     /**
      * Queue (FIFO)
      */
-    var Queue = Class.extend({
+    var User = Class.extend({
         init: function() {
-            this.__a = [];
+            Object.defineProperties(this, {
+                "username": {
+                    value: null,
+                    writable: true
+                },
+                "socketId": {
+                    value: null,
+                    writable: true
+                },
+                "latlng": {
+                    value: null,
+                    writable: true
+                },
+                "marker": {
+                    value: null,
+                    writable: true
+                },
+            });
+        },
+        toUserdata: function() {
+            return {
+                'username': this.username,
+                'socketId': this.socketId,
+                'lat': this.lat,
+                'lng': this.lng,
+            };
         },
     });
 
-    return Log;
+    return User;
 })();

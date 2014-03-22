@@ -17,6 +17,7 @@ module.exports = function(grunt) {
                         'index.log.js',
                         'index.dialog.js',
                         'index.geolocation.js',
+                        'index.user.js',
                         'index.main.js',
                     ]
                 },
