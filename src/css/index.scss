@@ -14,7 +14,7 @@ body {
         color: #FFF;
     }
 
-    #container {
+    #menu {
         position: fixed;
         top: 100px;
         right: 0;
@@ -24,6 +24,12 @@ body {
 
         text-align: right;
         border-radius: 10px 0 0 10px;
+
+        h3 {
+            text-align: left;
+            font-size: 1.2em;
+            border-bottom: 1px solid #888;
+        }
     }
 
     #log {

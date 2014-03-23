@@ -7,6 +7,9 @@ Mps.prototype.init = function() {
     // init maps
     this.r = {
         $map: $('#map'),
+        $menu: $('#menu'),
+        $menuContents: $('#menu-contents'),
+        $btnFold: $('#btn-fold'),
         $socketDisconnect: $('#socket-disconnect'),
         $formUsername: $('#form-username'),
         //$log: $('#log'),
@@ -15,6 +18,9 @@ Mps.prototype.init = function() {
         }),
         spin: Mps.Dialog('spin')
     };
+    if (Mps.DEBUG) {
+        window.r = this.r;
+    }
 
     /**
      * ユーザの一覧
@@ -33,11 +39,6 @@ Mps.prototype.initMaps = function() {
         zoom: 12,
         mapTypeId: google.maps.MapTypeId.ROADMAP
     });
-
-    //this._infoWindow = new google.maps.InfoWindow({
-    //    content: 'Info Window',
-    //    size: new google.maps.Size(50,50)
-    //});
 };
 
 Mps.prototype.initSocketio = function() {
@@ -69,43 +70,42 @@ Mps.prototype.initFinished = function() {
     _socket.on('connect', function() {
         console.log('connect', arguments);
 
-        // TODO: user add
-        var user = self._user = new Mps.User();
-        user.socketId = _socket.socket.transport.sessid;
-        user.latlng = new google.maps.LatLng(34.701909, 135.494977);
-        self._users.push(user);
+        if (self._users.length === 0) {
+            var user = self._user = new Mps.User({
+                socketId: _socket.socket.transport.sessid,
+                private: true,
+                marker: {
+                    lat: 34.701909 + Math.round(Math.random() * 100) / 10000, // TODO
+                    lng: 135.494977 + Math.round(Math.random() * 100) / 10000,
+                }
+            });
+            user.marker.ref = self.createMarker(user);
+            self._users.push(user);
+            self._socket.emit('user.connect', user.toUserdata());
 
-        self._socket.emit('user.connect', user.toUserdata());
-
-        Mps.log('my connection ID: ' + _socket.socket.transport.sessid);
-        Mps.log('接続方式: ' + _socket.socket.transport.name);
+            Mps.log('my connection ID: ' + _socket.socket.transport.sessid);
+            Mps.log('接続方式: ' + _socket.socket.transport.name);
+        }
     });
 
     _socket.on('user.connect', function(userdata) {
         Mps.log('user.connect', arguments);
 
-        var marker_ = userdata.marker;
-        if (marker_) {
-            var user = null;
-            self._users.forEach(function(user_) {
-                if (user_.socketId === userdata.socketId) {
-                    user = user_;
-                }
-            });
-            if (user) {
-                // 自分自身
-            } else {
-                user = self._user = new Mps.User();
-                user.socketId = userdata.socketId;
-                user.latlng = new google.maps.LatLng(userdata.lat, userdata.lng);
-                self._users.push(user);
+        var user = self.getUserBySocketId(userdata.socketId);
+        if (!user) {
+            user = new Mps.User(userdata);
+            self._users.push(user);
+
+            var marker_ = userdata.marker;
+            if (marker_) {
+                user.marker.ref = self.createMarker(user);
+                Mps.log('ref=', user.marker.ref);
             }
-            if (!user.marker) {
-            } else {
-                throw new Error('Marker is already created.');
-            }
+            self.r.log.add('ID[' + userdata.socketId + '] さんが接続しました。');
+        } else {
+            // 自分自身
+            self.r.log.add('[' + userdata.socketId + '] 接続しました。');
         }
-        self.r.log.add('ID[' + userdata.socketId + '] さんが接続しました。');
     });
     _socket.on('user.disconnect', function(connection) {
         console.log('user.disconnect', arguments);
@@ -119,8 +119,14 @@ Mps.prototype.initFinished = function() {
 
     _socket.on('user.update', function(userdata) {
         Mps.log('user.update', userdata);
-        var marker_ = userdata.marker;
-        if (marker_) {
+
+        var user = self.getUserBySocketId(userdata.socketId);
+        if (user && user.marker.ref) {
+            window.hoge = user;
+            user.marker.lat = userdata.marker.lat;
+            user.marker.lng = userdata.marker.lng;
+            user.marker.ref.setPosition(new google.maps.LatLng(user.marker.lat, user.marker.lng));
+            self.r.log.add('ID[' + userdata.socketId + '] さんの位置が更新されました。');
         }
     });
 
@@ -134,10 +140,36 @@ Mps.prototype.initFinished = function() {
         var $username = $this.find('*[name="username"]');
         Mps.log('submit, username=' + $username.val());
     });
+    this.r.$btnFold.click(function(e) {
+        Mps.log('');
+
+        setMenuShown(!self.r.$menuContents.is(':visible'));
+    });
+
+    setMenuShown(true);
+    function setMenuShown(isVisible) {
+        var $i = $('<i/>').addClass('glyphicon');
+        if (isVisible) {
+            $i.addClass('glyphicon-minus');
+            self.r.$btnFold.empty().append($i);
+            self.r.$menuContents.show();
+            self.r.$menu.css({
+                width: '259px'
+            });
+        } else {
+            $i.addClass('glyphicon-plus');
+            self.r.$btnFold.empty().append($i);
+            self.r.$menuContents.hide();
+            self.r.$menu.css({
+                width: '52px'
+            });
+        }
+    }
 };
+
 Mps.prototype.getUserBySocketId = function(socketId) {
     var user = null;
-    self._users.forEach(function(user_) {
+    this._users.forEach(function(user_) {
         if (user_.socketId === socketId) {
             user = user_;
             return false;
@@ -146,30 +178,40 @@ Mps.prototype.getUserBySocketId = function(socketId) {
 
     return user;
 };
-Mps.prototype.createMarker = function(userdata) {
-    var self = this;
 
+Mps.prototype.createMarker = function(user) {
+    var self = this;
+    var marker_ = user.marker;
+
+    if (marker_.lat === undefined || marker_.lng === undefined) {
+        throw new Error('lat/lng is undefined.');
+    }
     var marker = new google.maps.Marker({
-        position: new google.maps.LatLng(userdata.lat, userdata.lng),
+        position: new google.maps.LatLng(marker_.lat, marker_.lng),
         map: this._map,
-        draggable: true,
+        draggable: user.private,
         title: 'Click to zoom'
     });
-    this._map.setCenter(marker.getPosition());
+    var infoWindow = new google.maps.InfoWindow({
+        content: user.socketId + 'Info Window',
+        size: new google.maps.Size(250, 150)
+    });
+    //this._map.setCenter(marker.getPosition());
 
     google.maps.event.addListener(marker, 'click', function() {
-        self._map.setZoom(12);
+        //self._map.setZoom(12);
         self._map.setCenter(marker.getPosition());
 
-        //self._infoWindow.open(self._map, marker);
+        infoWindow.open(self._map, marker);
     });
     google.maps.event.addListener(marker, 'dragend', function(e) {
         Mps.log('marker dragged', e);
 
         var data = {
+            socketId: user.socketId,
             marker: {
-                lat: e.latLng.A,
-                lng: e.latLng.k
+                lat: e.latLng.k,
+                lng: e.latLng.A
             }
         };
         self._socket.emit('user.update', data);

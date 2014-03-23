@@ -20,14 +20,20 @@
     <body>
         <div id="map"></div>
 
-        <div id="container" class="container mps-overlay">
-            <form id="form-username" method="POST" action=".">
-                <div class="input-group">
-                    <span class="input-group-addon">Your name:</span>
-                    <input type="text" name="username" class="form-control" placeholder="Username">
-                </div>
-            </form>
-            <button id="socket-disconnect" class="btn btn-danger">Disconnect</button>
+        <div id="menu" class="container mps-overlay">
+            <button id="btn-fold" class="btn btn-default"></button>
+
+            <div id="menu-contents">
+                <h3>Info</h3>
+                <form id="form-username" method="POST" action=".">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-addon">Your name:</span>
+                        <input type="text" name="username" class="form-control" placeholder="Username">
+                    </div>
+                </form>
+
+                <button id="socket-disconnect" class="btn btn-danger btn-sm">Disconnect</button>
+            </div>
         </div>
 
         <div id="log" class="container mps-overlay"></div>
