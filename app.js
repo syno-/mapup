@@ -42,8 +42,34 @@ require('./show-addrs').show(app.get('port'));
 var socketIO = require('socket.io');
 var io = socketIO.listen(server);
 
+function getClients(roomClients) {
+    var r = [];
+    if (roomClients) {
+        for (var socketId in roomClients) {
+            if (roomClients.hasOwnProperty(socketId)) {
+                var client = roomClients[socketId];
+                console.log('client, data=', client.store.data);
+                var data;
+                if (client.store.data) {
+                    data = client.store.data;
+                } else {
+                    data = {};
+                }
+                data.socketId = socketId;
+                r.push(data);
+            }
+        }
+    }
+
+    return r;
+}
+
 io.sockets.on('connection', function(socket) {
     console.log('connection, id=', socket.id);
+    //console.log('connection, sockets=', io.sockets.sockets);
+
+    var clients = getClients(io.sockets.sockets);
+    socket.emit('user.list', clients);
 
     socket.on('disconnect', function() {
         console.log('user.disconnect');
@@ -62,12 +88,23 @@ io.sockets.on('connection', function(socket) {
      * }
      */
     socket.on('user.connect', function(userdata) {
-        console.log('user.connect');
-        io.sockets.emit('user.connect', userdata);
+        console.log('user.connect, latlng=', userdata.marker);
+
+        socket.set('marker', userdata.marker, function () {
+            //console.log('stored=', socket.store.data);
+            io.sockets.emit('user.connect', userdata);
+        });
     });
     socket.on('user.update', function(userdata) {
         console.log('user.update');
-        io.sockets.emit('user.update', userdata);
+
+        socket.set('username', userdata.username, function () {
+            //io.sockets.emit('user.update', {
+            socket.emit('user.update', {
+                socketId: socket.id,
+                username: userdata.username,
+            });
+        });
     });
 
 });

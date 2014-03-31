@@ -89,12 +89,14 @@ Mps.Log = (function() {
 
             // show
             this._$.empty();
-            this.__a.forEach(function(log) {
+            var a = this.__a.slice();
+            var log;
+            while ((log = a.pop())) {
                 var $p = $('<p/>').appendTo(self._$);
                 $('<span/>').text('[' + log.date.toISOString() + '] ').appendTo($p);
                 //$('<br/>').appendTo($p);
                 $('<span/>').text(log.msg).appendTo($p);
-            });
+            }
         },
     });
 
