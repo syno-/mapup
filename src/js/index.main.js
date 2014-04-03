@@ -75,11 +75,18 @@ Mps.prototype.initFinished = function() {
                 //self._map.setZoom(12);
                 self._map.setCenter(this.marker.ref.getPosition());
 
-                var infoWindow = new google.maps.InfoWindow({
-                    content: user.socketId + 'Info Window',
-                    size: new google.maps.Size(250, 150)
-                });
-                infoWindow.open(self._map, this.marker.ref);
+                if (!user.infoWindow) {
+                    user.infoWindow = new google.maps.InfoWindow({
+                        //size: new google.maps.Size(250, 150)
+                    });
+                } else {
+                    //google.maps.event.clearInstanceListeners(infoWindow);
+                    //infoWindow.close();
+                    //infoWindow = null;
+                }
+                user.infoWindow.setContent('username: ' + user.username + '\nID[' + user.socketId + ']');
+
+                user.infoWindow.open(self._map, this.marker.ref);
             }).on('marker.dragend', function(e) {
                 Mps.log('marker dragged', e);
 
@@ -180,6 +187,10 @@ Mps.prototype.initFinished = function() {
             if (userdata.marker) {
                 user.marker.latlng = userdata.marker;
                 self.r.log.add('ID[' + userdata.socketId + '] さんの位置が更新されました。');
+            }
+            if (userdata.username) {
+                user.username = userdata.username;
+                self.r.log.add('ID[' + userdata.socketId + '] さんの名前が' + userdata.username + 'に更新されました。');
             }
         }
     });
