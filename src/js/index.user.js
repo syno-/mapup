@@ -97,8 +97,8 @@ Mps.User = (function() {
                 "private": {
                     set: function(newValue) {
                         self._private = newValue;
-                        if (this.ref) {
-                            this.ref.setDraggable(newValue);
+                        if (this.marker.ref) {
+                            this.marker.ref.setDraggable(newValue);
                         }
                     },
                     get: function() {

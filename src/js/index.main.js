@@ -176,12 +176,11 @@ Mps.prototype.initFinished = function() {
         Mps.log('user.update', userdata);
 
         var user = self.getUserBySocketId(userdata.socketId);
-        if (user && user.marker.ref) {
-            user.marker.latlng = {
-                lat: userdata.marker.lat,
-                lng: userdata.marker.lng,
-            };
-            self.r.log.add('ID[' + userdata.socketId + '] さんの位置が更新されました。');
+        if (user) {
+            if (userdata.marker) {
+                user.marker.latlng = userdata.marker;
+                self.r.log.add('ID[' + userdata.socketId + '] さんの位置が更新されました。');
+            }
         }
     });
 

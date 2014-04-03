@@ -99,10 +99,12 @@ io.sockets.on('connection', function(socket) {
         console.log('user.update');
 
         socket.set('username', userdata.username, function () {
-            //io.sockets.emit('user.update', {
-            socket.emit('user.update', {
-                socketId: socket.id,
-                username: userdata.username,
+            socket.set('marker', userdata.marker, function () {
+                io.sockets.emit('user.update', {
+                    socketId: socket.id,
+                    marker: userdata.marker,
+                    username: userdata.username,
+                });
             });
         });
     });
