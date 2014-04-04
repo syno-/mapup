@@ -12,6 +12,9 @@ Mps.prototype.init = function() {
         $btnFold: $('#btn-fold'),
         $socketDisconnect: $('#socket-disconnect'),
         $formUsername: $('#form-username'),
+        $tags: $('#tags'),
+        $tagsInput: $('#tags input[name="tags"]'),
+        $formTags: $('#form-tags'),
         //$log: $('#log'),
         log: new Mps.Log('log', {
             limit: 100
@@ -211,6 +214,10 @@ Mps.prototype.initFinished = function() {
             username: val,
         });
     });
+
+    this.initTags(function(tag) {
+    }, function(tag) {
+    });
     this.r.$btnFold.click(function(e) {
         Mps.log('');
 
@@ -236,6 +243,36 @@ Mps.prototype.initFinished = function() {
             });
         }
     }
+};
+
+Mps.prototype.initTags = function(addedTagCallback, removedTagCallback) {
+    var self = this;
+    this._tags = [];
+    function refreshTags() {
+        self.r.$tags.empty();
+        self._tags.forEach(function(tag) {
+            var $span = $('<span/>').addClass('tag').appendTo(self.r.$tags);
+            $('<span/>').addClass('name').text(tag).appendTo($span);
+            $('<span/>').addClass('remove').text('×').appendTo($span)
+            .on('click', function(e) {
+                $span.remove();
+
+                removedTagCallback(tag);
+            });
+            $('<input type="hidden"/>').addClass('tag').text(tag).appendTo($span);
+        });
+        self.r.$tags.append(self.r.$tagsInput);
+    }
+    this.r.$formTags.on('submit', function(e) {
+        e.preventDefault();
+
+        var tag = self.r.$tagsInput.val();
+        self._tags.push(tag);
+        refreshTags();
+        self.r.$tagsInput.focus().val('');
+
+        addedTagCallback(tag);
+    });
 };
 
 Mps.prototype.getUserBySocketId = function(socketId) {

@@ -10,16 +10,16 @@ module.exports = function(grunt) {
             // files
             index: {
                 js: {
-                    out: 'index.js',
-                    min: 'index.min.js',
+                    out: 'mps.js',
+                    min: 'mps.min.js',
                     files: [
-                        'index.begin.js',
-                        'index.log.js',
-                        'index.dialog.js',
-                        'index.geolocation.js',
-                        'index.users.js',
-                        'index.user.js',
-                        'index.main.js',
+                        'mps.begin.js',
+                        'mps.log.js',
+                        'mps.dialog.js',
+                        'mps.geolocation.js',
+                        'mps.users.js',
+                        'mps.user.js',
+                        'mps.main.js',
                     ]
                 },
                 css: {
@@ -38,7 +38,7 @@ module.exports = function(grunt) {
         pkg: grunt.file.readJSON('package.json'),
         jshint: {
             options: {
-                ignores: [path.src.js + 'index.begin.js'],
+                ignores: [path.src.js + 'mps.begin.js'],
             },
             all: ['Gruntfile.js', path.src.js + '**/*.js']
         },

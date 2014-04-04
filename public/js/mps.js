@@ -1,0 +1,911 @@
+
+if (typeof Mps === "undefined") {
+    Mps = function() {
+        if (!(this instanceof Mps)) {
+            return new Mps();
+        }
+        //console.log(this);
+        this.init.apply(this, arguments);
+
+        return this;
+    };
+
+    /** デバッグフラグ。有効だとログが出力されます。 */
+    Mps.DEBUG = true;
+
+    Mps.log = (function(d) {
+        var l = null;
+        if (window.console && window.console.log && d) {
+            try {
+                if (console.log.bind) {
+                    l = console.log.bind(console);
+                }
+            } catch (e) {
+                // IE8 Document Mode?
+            }
+            if (l === null) {
+                l = function() {
+                    var s = null;
+                    for (var i = 0; i < arguments.length; i++) {
+                        if (s === null) {
+                            s = arguments[i];
+                        } else {
+                            s = ' ' + arguments[i];
+                        }
+                    }
+                    console.log(s);
+                };
+            }
+        }
+        if (l === null) {
+            l = function(){};
+        }
+        return l;
+    })(window.Mps.DEBUG);
+
+    Mps.Queries = (function() {
+        var queryStr = window.location.search;
+        var result = {};
+        if (queryStr.length <= 1) {
+            return result;
+        }
+        var queries = queryStr.substring(1, queryStr.length).split('&');
+        for (var i=0; i<queries.length; i++) {
+            var query = queries[i].split('=');
+            var key = decodeURIComponent(query[0]);
+            var value = (query.length === 1) ? null : decodeURIComponent(query[1]);
+            result[key] = value;
+        }
+        return result;
+    })();
+    Mps.log('Queries:', Mps.Queries);
+} else {
+    throw new Error('Mps already defined.');
+}
+
+    
+
+/* Simple JavaScript Inheritance
+ * By John Resig http://ejohn.org/
+ * MIT Licensed.
+ */
+// Inspired by base2 and Prototype
+(function(){
+  var initializing = false, fnTest = /xyz/.test(function(){xyz;}) ? /\b_super\b/ : /.*/;
+ 
+  // The base Class implementation (does nothing)
+  this.Class = function(){};
+ 
+  // Create a new Class that inherits from this class
+  Class.extend = function(prop) {
+    var _super = this.prototype;
+   
+    // Instantiate a base class (but only create the instance,
+    // don't run the init constructor)
+    initializing = true;
+    var prototype = new this();
+    initializing = false;
+   
+    // Copy the properties over onto the new prototype
+    for (var name in prop) {
+      // Check if we're overwriting an existing function
+      prototype[name] = typeof prop[name] == "function" &&
+        typeof _super[name] == "function" && fnTest.test(prop[name]) ?
+        (function(name, fn){
+          return function() {
+            var tmp = this._super;
+           
+            // Add a new ._super() method that is the same method
+            // but on the super-class
+            this._super = _super[name];
+           
+            // The method only need to be bound temporarily, so we
+            // remove it when we're done executing
+            var ret = fn.apply(this, arguments);        
+            this._super = tmp;
+           
+            return ret;
+          };
+        })(name, prop[name]) :
+        prop[name];
+    }
+   
+    // The dummy class constructor
+    function Class() {
+      // All construction is actually done in the init method
+      if ( !initializing && this.init )
+        this.init.apply(this, arguments);
+    }
+   
+    // Populate our constructed prototype object
+    Class.prototype = prototype;
+   
+    // Enforce the constructor to be what we expect
+    Class.prototype.constructor = Class;
+ 
+    // And make this class extendable
+    Class.extend = arguments.callee;
+   
+    return Class;
+  };
+})();
+
+;
+/**
+ *
+ * Usage: 
+ * var log= new Mps.Log('log-element-id', {
+ *     limit: 100
+ * });
+ * log.add('message');
+ * log.add([
+ *     'multiple',
+ *     'message'
+ * ]);
+ *
+ */
+Mps.Log = (function() {
+    "use strict";
+
+    /**
+     * Queue (FIFO)
+     */
+    var Queue = Class.extend({
+        init: function() {
+            this.__a = [];
+        },
+        enqueue: function(o) {
+            this.__a.push(o);
+        },
+        dequeue: function() {
+            if( this.__a.length > 0 ) {
+                return this.__a.shift();
+            }
+            return null;
+        },
+        size: function() {
+            return this.__a.length;
+        },
+        toString: function() {
+            return '[' + this.__a.join(',') + ']';
+        }
+    });
+
+    var Log = Queue.extend({
+        init: function(logElementId, options) {
+            this._super.apply(this, arguments);
+
+            var elm = document.getElementById(logElementId);
+            if (!elm) {
+                throw new Error('This ID had element is not attached on document. ID=' + logElementId);
+            }
+            this._$ = $(elm);
+
+            // setup options
+            if (!options) {
+                options = {};
+            }
+            if (!options.limit) {
+                options.limit = 100;
+            }
+            this._options = options;
+        },
+        get: function() {
+            return this._$;
+        },
+        add: function(o) {
+            var msgs;
+            if (typeof o === 'string') {
+                msgs = [o];
+            } else {
+                msgs = o;
+            }
+
+            var self = this;
+
+            // enqueue
+            msgs.forEach(function(msg) {
+                self.enqueue({
+                    date: new Date(),
+                    msg: msg
+                });
+            });
+
+            // dequeue
+            if (this.size() > this._options.limit) {
+                var overflow = this._options.limit - this.size();
+                for (var i = 0; i < overflow; i++) {
+                    this.dequeue();
+                }
+            }
+
+            // show
+            this._$.empty();
+            var a = this.__a.slice();
+            var log;
+            while ((log = a.pop())) {
+                var $p = $('<p/>').appendTo(self._$);
+                $('<span/>').text('[' + log.date.toISOString() + '] ').appendTo($p);
+                //$('<br/>').appendTo($p);
+                $('<span/>').text(log.msg).appendTo($p);
+            }
+        },
+    });
+
+    return Log;
+})();
+;
+/**
+ *
+ * Usage: 
+ * var spin = Mps.Dialog('spin');
+ * spin.show();
+ *
+ */
+Mps.Dialog = (function() {
+    "use strict";
+
+    var _dialogRefs = {};
+
+    var ctr = function Dialog(obj) {
+        var dlgId;
+        if (obj instanceof jQuery) {
+            dlgId = obj.attr('id');
+        } else {
+            // 文字列
+            dlgId = obj;
+        }
+
+        var d = _dialogRefs[dlgId];
+        if (!d) {
+            var Dlg = dialogs[dlgId];
+            if (Dlg) {
+                d = new Dlg(dlgId);
+            } else {
+                d = new DialogProto(dlgId);
+            }
+            _dialogRefs[dlgId] = d;
+        }
+
+        return d;
+    };
+
+    var DialogProto = Class.extend({
+        init: function(dlgId) {
+            this._dlgId = dlgId;
+        },
+        initBootstrap: function() {
+            this._$ = $('#' + this._dlgId);
+        },
+    });
+
+    var dialogs = {
+        /**
+         * 非同期プログレスを出すダイアログです。
+         *
+         * @extends DialogProto
+         */
+        spin: DialogProto.extend({
+            width: 260,
+            height: 260,
+            opts : {
+                lines: 13, // The number of lines to draw
+                length: 23, // The length of each line
+                width: 14, // The line thickness
+                radius: 30, // The radius of the inner circle
+                corners: 1, // Corner roundness (0..1)
+                rotate: 0, // The rotation offset
+                direction: 1, // 1: clockwise, -1: counterclockwise
+                //color: '#fff', // #rgb or #rrggbb or array of colors
+                speed: 2.2, // Rounds per second
+                trail: 100, // Afterglow percentage
+                shadow: false, // Whether to render a shadow
+                hwaccel: false, // Whether to use hardware acceleration
+                className: 'spinner', // The CSS class to assign to the spinner
+                zIndex: 2e9, // The z-index (defaults to 2000000000)
+                //top: 'auto', // Top position relative to parent in px
+                //left: 'auto' // Left position relative to parent in px
+            },
+            show: function() {
+                //this._center();
+                this._$.show();
+                return this;
+            },
+            hide: function() {
+                this._$.hide();
+                return this;
+            },
+            init: function(dlgId) {
+                this._super.apply(this, arguments);
+
+                var $body = $('body');
+                this._spinner = new Spinner(this.opts).spin($body[0]);
+                var $spinner = $(this._spinner.el).attr('id', dlgId);
+
+                DialogProto.prototype.initBootstrap.apply(this, arguments);
+                this.hide();
+            }
+        }),
+        disconnected: DialogProto.extend({
+            init: function(dlgId) {
+                this._super.apply(this, arguments);
+            }
+        }),
+    };
+
+    return ctr;
+})();
+;
+/**
+ *
+ * Get User location.
+ *
+ * Usage: 
+ *
+ *     Mps.Geo.current().done(function(ll) {
+ *     }).fail(function(e) {
+ *     });
+ */
+Mps.Geo = (function() {
+    "use strict";
+
+    var instance;
+
+    var ctr = function Geo() {
+        if (instance) {
+            return instance;
+        }
+        instance = this;
+
+        // init
+
+        return instance;
+    };
+
+    /**
+     * http://www.w3.org/TR/geolocation-API/#position_error_interface
+     */
+    ctr.PERMISSION_DENIED = 1;
+    ctr.POSITION_UNAVAILABLE = 2;
+    ctr.TIMEOUT = 3;
+
+    ctr.BROWSER_NOT_SUPPORTED = -1;
+
+    /**
+     * Obtain current location.
+     *
+     * @param {PositionOptions} options http://www.w3.org/TR/geolocation-API/#position-options
+     */
+    ctr.current = function(options) {
+        var d = $.Deferred();
+
+        if (!options) {
+            options = {
+                timeout: 7000
+            };
+        }
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(pos) {
+                Mps.log('success');
+                d.resolve.call(d, pos);
+            }, function(err) {
+                Mps.log('fail');
+                d.reject.apply(d, arguments);
+            }, options);
+        } else {
+            var err = new Error('This browser not supported geolocation API.');
+            err.code = -1;
+            d.reject.call(d, err);
+        }
+
+        return d.promise();
+    };
+
+    return ctr;
+})();
+;
+/**
+ *
+ * ユーザ管理用
+ *
+ */
+Mps.Users = (function() {
+    "use strict";
+
+    /**
+     * Queue (FIFO)
+     */
+    var Users = Class.extend({
+        init: function() {
+            this._users = [];
+        },
+    });
+
+    return Users;
+})();
+;
+/**
+ *
+ * Usage: 
+ *
+ */
+Mps.User = (function() {
+    "use strict";
+
+    var EventObserver = Class.extend({
+        _events: null,
+
+        emit: function(eventName, args) {
+            // collect
+            var fireEventName;
+            var fireEvents = [];
+            var e;
+            for (var i = 0, iL = this._events.length; i < iL; i++) {
+                e = this._events[i];
+                if (e.name === eventName) {
+                    fireEventName = eventName;
+                    fireEvents.push(e);
+                }
+            }
+
+            // fire
+            if (fireEvents.length > 0) {
+                var newArgs = this._fireHooks(fireEventName, args); // 複数回実行されてしまう
+                for (var j = 0, jL = fireEvents.length; j < jL; j++) {
+                    e = fireEvents[j];
+                    //console.trace();
+                    //Quiks.log('event fired:', fireEventName, newArgs);
+                    e.func.apply(this, newArgs);
+                }
+            }
+        },
+        _fireHooks: function(eventName, args) {
+            return args;
+        },
+        /**
+         * @param {String} name event name
+         * @param {Function} func event callback
+         */
+        on: function(name, func) {
+            this._events.push({
+                name: name,
+                func: func
+            });
+
+            return this;
+        },
+        off: function(name, func) {
+            this._events = this._events.filter(function(event, i) {
+                if (event.func === func) {
+                    return false;
+                }
+                if (event.name === name) {
+                    return false;
+                }
+                return true;
+            });
+
+            return this;
+        },
+        init: function() {
+            this._events = [];
+        }
+    }); 
+
+    /**
+     * Queue (FIFO)
+     */
+    var User = EventObserver.extend({
+        init: function(userdata) {
+            this._super.apply(this, arguments);
+            var self = this;
+            self._latlng = null;
+            self._marker = null;
+            self._private = false;
+            Object.defineProperties(this, {
+                "username": {
+                    value: null,
+                    writable: true
+                },
+                "socketId": {
+                    value: null,
+                    writable: true
+                },
+                "marker": {
+                    value: {},
+                    writable: false
+                },
+                "infoWindow": {
+                    value: null,
+                    writable: true
+                },
+                "private": {
+                    set: function(newValue) {
+                        self._private = newValue;
+                        if (this.marker.ref) {
+                            this.marker.ref.setDraggable(newValue);
+                        }
+                    },
+                    get: function() {
+                        return self._private;
+                    }
+                },
+            });
+            Object.defineProperties(this.marker, {
+                "latlng": {
+                    set: function(newValue) {
+                        self._latlng = newValue;
+                        if (this.ref) {
+                            if (newValue) {
+                                this.ref.setPosition(new google.maps.LatLng(newValue.lat, newValue.lng));
+                            } else {
+                                this.ref.setPosition(null);
+                            }
+                        }
+                    },
+                    get: function() {
+                        return self._latlng;
+                    }
+                },
+                "ref": {
+                    set: function(newValue) {
+                        self._marker = newValue;
+                    },
+                    get: function() {
+                        return self._marker;
+                    }
+                },
+            });
+
+            if (userdata.username) {
+                this.username = userdata.username;
+            }
+            if (userdata.socketId) {
+                this.socketId = userdata.socketId;
+            }
+            if (typeof userdata.private !== 'undefined') {
+                this.private = userdata.private;
+            }
+
+            this._marker = User.createMarker(this);
+            if (userdata.map) {
+                this._marker.setMap(userdata.map);
+            }
+            if (userdata.marker) {
+                this.marker.latlng = userdata.marker;
+            }
+        },
+        toUserdata: function() {
+            return {
+                'username': this.username,
+                'socketId': this.socketId,
+                'marker': this.marker.latlng,
+            };
+        },
+    });
+
+    /**
+     *
+     */
+    User.createMarker = function(user) {
+        var self = this;
+
+        var options = {};
+        if (user.latlng) {
+            options.position = new google.maps.LatLng(user.latlng.lat, user.latlng.lng);
+        }
+        if (typeof user.private !== 'undefined') {
+            options.draggable = user.private;
+        }
+        //map: this._map,
+        //title: 'Click to zoom'
+        var marker = new google.maps.Marker(options);
+
+        google.maps.event.addListener(marker, 'click', function(e) {
+            user.emit('marker.click', arguments);
+        });
+        google.maps.event.addListener(marker, 'dragend', function(e) {
+            user.emit('marker.dragend', arguments);
+        });
+
+        return marker;
+    };
+
+    return User;
+})();
+;
+/**
+ *
+ */
+Mps.prototype.init = function() {
+
+    // init maps
+    this.r = {
+        $map: $('#map'),
+        $menu: $('#menu'),
+        $menuContents: $('#menu-contents'),
+        $btnFold: $('#btn-fold'),
+        $socketDisconnect: $('#socket-disconnect'),
+        $formUsername: $('#form-username'),
+        $tags: $('#tags'),
+        $tagsInput: $('#tags input[name="tags"]'),
+        $formTags: $('#form-tags'),
+        //$log: $('#log'),
+        log: new Mps.Log('log', {
+            limit: 100
+        }),
+        spin: Mps.Dialog('spin')
+    };
+    if (Mps.DEBUG) {
+        window.r = this.r;
+    }
+
+    /**
+     * ユーザの一覧
+     */
+    this._users = [];
+
+    this.initMaps();
+    this.initSocketio();
+    this.initFinished();
+};
+
+Mps.prototype.initMaps = function() {
+    this._map = new google.maps.Map(this.r.$map[0], {
+        // Osaka
+        center: new google.maps.LatLng(34.701909, 135.494977),
+        zoom: 12,
+        mapTypeId: google.maps.MapTypeId.ROADMAP
+    });
+};
+
+Mps.prototype.initSocketio = function() {
+    Mps.log('socketio');
+
+    this._socket = io.connect(location.protocol + '//' + location.host + '/');
+};
+
+Mps.prototype.initFinished = function() {
+    var self = this;
+    var _socket = this._socket;
+
+    // init my location
+    //self.r.spin.show();
+    //Mps.Geo.current().done(function(pos) {
+    //    Mps.log('detected: ', pos);
+    //    this.setMyself({
+    //        lat: pos.coords.latitude,
+    //        lng: pos.coords.longitude,
+    //    });
+    //}).fail(function(e) {
+    //    Mps.log('Geolocation: ' + e.message, e);
+    //    this.setMyself(null);
+    //}).always(function(e) {
+    //    self.r.spin.hide();
+    //});
+
+    function addUser(userdata) {
+        Mps.log('userdata=', userdata);
+        var user = self.getUserBySocketId(userdata.socketId);
+        if (!user) {
+            userdata.map = self._map;
+            user = new Mps.User(userdata).on('marker.click', function(e) {
+                //self._map.setZoom(12);
+                self._map.setCenter(this.marker.ref.getPosition());
+
+                if (!user.infoWindow) {
+                    user.infoWindow = new google.maps.InfoWindow({
+                        //size: new google.maps.Size(250, 150)
+                    });
+                } else {
+                    //google.maps.event.clearInstanceListeners(infoWindow);
+                    //infoWindow.close();
+                    //infoWindow = null;
+                }
+                user.infoWindow.setContent('username: ' + user.username + '\nID[' + user.socketId + ']');
+
+                user.infoWindow.open(self._map, this.marker.ref);
+            }).on('marker.dragend', function(e) {
+                Mps.log('marker dragged', e);
+
+                var data = {
+                    socketId: user.socketId,
+                    marker: {
+                        lat: e.latLng.k,
+                        lng: e.latLng.A
+                    }
+                };
+                self._socket.emit('user.update', data);
+            });
+
+            if (user.socketId === _socket.socket.transport.sessid) {
+                Mps.log('myself');
+                if (self._user) {
+                    // 自分が重複したので、昔のやつ消して作り直す
+                    removeUser(self._user);
+                }
+                self._user = user;
+                user.private = true;
+                user.marker.latlng = {
+                    lat: 34.701909 + Math.round(Math.random() * 100) / 10000, // TODO
+                    lng: 135.494977 + Math.round(Math.random() * 100) / 10000,
+                };
+                self.r.log.add('あなたのIDは' + user.socketId + 'です。');
+                self._socket.emit('user.connect', user.toUserdata());
+            } else {
+                Mps.log('other');
+                self.r.log.add('ID[' + userdata.socketId + '] さんが接続しました。');
+            }
+            self._users.push(user);
+            //Mps.log('接続方式: ' + _socket.socket.transport.name);
+        } else {
+            // 自分自身
+            //self.r.log.add('[' + userdata.socketId + '] 接続しました。');
+            Mps.log('重複するユーザが検出されました。', userdata);
+        }
+
+        return user;
+    }
+
+    function removeUser(user) {
+        var marker = user.marker.ref;
+        if (marker) {
+            marker.setMap(null);
+        }
+    }
+
+    function removeAllUsers() {
+        self._users.forEach(function(user) {
+            removeUser(user);
+        });
+        self._users = [];
+    }
+
+    // socket.io
+    _socket.on('connect', function() {
+        console.log('connect', arguments);
+
+        if (self._users.length === 0) {
+        }
+    });
+
+    _socket.on('user.list', function(userdataList) {
+        Mps.log('user.list', arguments);
+
+        removeAllUsers();
+        userdataList.forEach(function(userdata) {
+            addUser(userdata);
+        });
+    });
+
+    _socket.on('user.connect', function(userdata) {
+        Mps.log('user.connect', arguments);
+
+        addUser(userdata);
+    });
+    _socket.on('user.disconnect', function(connection) {
+        console.log('user.disconnect', arguments);
+        self.r.log.add('ID[' + connection.id + '] さんが切断しました。');
+
+        // delete user
+        self._users = self._users.filter(function(user) {
+            if (user.socketId !== connection.id) {
+                return true;
+            }
+            removeUser(user);
+            return false;
+        });
+    });
+
+    _socket.on('user.update', function(userdata) {
+        Mps.log('user.update', userdata);
+
+        var user = self.getUserBySocketId(userdata.socketId);
+        if (user) {
+            if (userdata.marker) {
+                user.marker.latlng = userdata.marker;
+                self.r.log.add('ID[' + userdata.socketId + '] さんの位置が更新されました。');
+            }
+            if (userdata.username) {
+                user.username = userdata.username;
+                self.r.log.add('ID[' + userdata.socketId + '] さんの名前が' + userdata.username + 'に更新されました。');
+            }
+        }
+    });
+
+    this.r.$socketDisconnect.click(function(e) {
+        _socket.disconnect();
+    });
+    this.r.$formUsername.on('submit', function(e) {
+        e.preventDefault();
+
+        var $this = $(this);
+        var $username = $this.find('*[name="username"]');
+        var val = $username.val();
+        Mps.log('submit, username=' + val);
+
+        _socket.emit('user.update', {
+            socketId: self._user.socketId,
+            username: val,
+        });
+    });
+
+    this.initTags(function(tag) {
+    }, function(tag) {
+    });
+    this.r.$btnFold.click(function(e) {
+        Mps.log('');
+
+        setMenuShown(!self.r.$menuContents.is(':visible'));
+    });
+
+    setMenuShown(true);
+    function setMenuShown(isVisible) {
+        var $i = $('<i/>').addClass('glyphicon');
+        if (isVisible) {
+            $i.addClass('glyphicon-minus');
+            self.r.$btnFold.empty().append($i);
+            self.r.$menuContents.show();
+            self.r.$menu.css({
+                width: '259px'
+            });
+        } else {
+            $i.addClass('glyphicon-plus');
+            self.r.$btnFold.empty().append($i);
+            self.r.$menuContents.hide();
+            self.r.$menu.css({
+                width: '52px'
+            });
+        }
+    }
+};
+
+Mps.prototype.initTags = function(addedTagCallback, removedTagCallback) {
+    var self = this;
+    this._tags = [];
+    function refreshTags() {
+        self.r.$tags.empty();
+        self._tags.forEach(function(tag) {
+            var $span = $('<span/>').addClass('tag').appendTo(self.r.$tags);
+            $('<span/>').addClass('name').text(tag).appendTo($span);
+            $('<span/>').addClass('remove').text('×').appendTo($span)
+            .on('click', function(e) {
+                $span.remove();
+
+                removedTagCallback(tag);
+            });
+            $('<input type="hidden"/>').addClass('tag').text(tag).appendTo($span);
+        });
+        self.r.$tags.append(self.r.$tagsInput);
+    }
+    this.r.$formTags.on('submit', function(e) {
+        e.preventDefault();
+
+        var tag = self.r.$tagsInput.val();
+        self._tags.push(tag);
+        refreshTags();
+        self.r.$tagsInput.focus().val('');
+
+        addedTagCallback(tag);
+    });
+};
+
+Mps.prototype.getUserBySocketId = function(socketId) {
+    var user = null;
+    this._users.forEach(function(user_) {
+        if (user_.socketId === socketId) {
+            user = user_;
+            return false;
+        }
+    });
+
+    return user;
+};
+
+$(function() {
+    var mps = Mps();
+    if (Mps.DEBUG) {
+        window.mps = mps;
+    }
+});

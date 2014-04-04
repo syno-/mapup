@@ -32,6 +32,37 @@ body {
         }
     }
 
+    #tags {
+        background-color: #FFF;
+        border: 1px solid #CCC;
+        padding: 6px;
+        color: #000;
+        text-align: left;
+        border-radius: 5px;
+        font-size: 12px;
+
+        .tag {
+            background-color: #EEE;
+            border: 1px solid #DDD;
+            border-radius: 2px;
+
+            .name {
+                padding: 2px;
+            }
+            .remove {
+                cursor: pointer;
+                margin-left: 1px;
+            }
+        }
+
+        input {
+            border: none;
+            box-shadow: none;
+            width: auto;
+            margin-left: 5px;
+        }
+    }
+
     #log {
         position: fixed;
         top: auto;

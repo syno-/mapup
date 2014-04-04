@@ -15,7 +15,7 @@
         <script type="text/javascript" src="/js/libs/bootstrap.min.js"></script>
         <script type="text/javascript" src="/js/libs/spin.min.js"></script>
         <script type="text/javascript" src="/socket.io/socket.io.js"></script>
-        <script type="text/javascript" src="/js/index.js"></script>
+        <script type="text/javascript" src="/js/mps.js"></script>
     </head>
     <body>
         <div id="map"></div>
@@ -28,10 +28,16 @@
                 <form id="form-username" method="POST" action=".">
                     <div class="input-group input-group-sm">
                         <span class="input-group-addon">Your name:</span>
-                        <input type="text" name="username" class="form-control" placeholder="Username">
+                        <input type="text" name="username" class="form-control" placeholder="Username" />
+                    </div>
+                </form>
+                <form id="form-tags" method="POST" action=".">
+                    <div id="tags">
+                        <input type="text" name="tags" autocomplete="off" />
                     </div>
                 </form>
 
+                <h3>Misc</h3>
                 <button id="socket-disconnect" class="btn btn-danger btn-sm">Disconnect</button>
             </div>
         </div>
