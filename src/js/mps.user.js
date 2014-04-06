@@ -64,6 +64,7 @@ Mps.User = (function() {
         },
         init: function() {
             this._events = [];
+            this._tags = [];
         }
     }); 
 

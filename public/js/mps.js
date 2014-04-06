@@ -490,6 +490,7 @@ Mps.User = (function() {
         },
         init: function() {
             this._events = [];
+            this._tags = [];
         }
     }); 
 
@@ -722,16 +723,18 @@ Mps.prototype.initFinished = function() {
             if (user.socketId === _socket.socket.transport.sessid) {
                 Mps.log('myself');
                 if (self._user) {
-                    // 自分が重複したので、昔のやつ消して作り直す
-                    removeUser(self._user);
+                    // 自分が既に存在する
+                } else {
+                    self._user = user;
+                    user.private = true;
+                    user.marker.latlng = {
+                        lat: 34.701909 + Math.round(Math.random() * 100) / 10000, // TODO
+                        lng: 135.494977 + Math.round(Math.random() * 100) / 10000,
+                    };
+                    self.initMyself(user);
+                    self.r.log.add('あなたのIDは' + user.socketId + 'です。');
                 }
-                self._user = user;
-                user.private = true;
-                user.marker.latlng = {
-                    lat: 34.701909 + Math.round(Math.random() * 100) / 10000, // TODO
-                    lng: 135.494977 + Math.round(Math.random() * 100) / 10000,
-                };
-                self.r.log.add('あなたのIDは' + user.socketId + 'です。');
+
                 self._socket.emit('user.connect', user.toUserdata());
             } else {
                 Mps.log('other');
@@ -817,23 +820,7 @@ Mps.prototype.initFinished = function() {
     this.r.$socketDisconnect.click(function(e) {
         _socket.disconnect();
     });
-    this.r.$formUsername.on('submit', function(e) {
-        e.preventDefault();
 
-        var $this = $(this);
-        var $username = $this.find('*[name="username"]');
-        var val = $username.val();
-        Mps.log('submit, username=' + val);
-
-        _socket.emit('user.update', {
-            socketId: self._user.socketId,
-            username: val,
-        });
-    });
-
-    this.initTags(function(tag) {
-    }, function(tag) {
-    });
     this.r.$btnFold.click(function(e) {
         Mps.log('');
 
@@ -861,19 +848,44 @@ Mps.prototype.initFinished = function() {
     }
 };
 
-Mps.prototype.initTags = function(addedTagCallback, removedTagCallback) {
+Mps.prototype.initMyself = function(user) {
     var self = this;
-    this._tags = [];
+
+    // Username
+    this.r.$formUsername.on('submit', function(e) {
+        e.preventDefault();
+
+        var $this = $(this);
+        var $username = $this.find('*[name="username"]');
+        var val = $username.val();
+        Mps.log('submit, username=' + val);
+
+        self._socket.emit('user.update', {
+            socketId: user.socketId,
+            username: val,
+        });
+    });
+
+    // Tags
+    function addedTagCallback(tag) {
+    }
+    function removedTagCallback(tag) {
+    }
     function refreshTags() {
         self.r.$tags.empty();
-        self._tags.forEach(function(tag) {
+        user._tags.forEach(function(tag) {
             var $span = $('<span/>').addClass('tag').appendTo(self.r.$tags);
             $('<span/>').addClass('name').text(tag).appendTo($span);
             $('<span/>').addClass('remove').text('×').appendTo($span)
             .on('click', function(e) {
                 $span.remove();
 
-                removedTagCallback(tag);
+                var idx = user._tags.indexOf(tag);
+                if (idx >= 0) {
+                    user._tags.splice(idx, 1);
+
+                    removedTagCallback(tag);
+                }
             });
             $('<input type="hidden"/>').addClass('tag').text(tag).appendTo($span);
         });
@@ -883,11 +895,13 @@ Mps.prototype.initTags = function(addedTagCallback, removedTagCallback) {
         e.preventDefault();
 
         var tag = self.r.$tagsInput.val();
-        self._tags.push(tag);
-        refreshTags();
         self.r.$tagsInput.focus().val('');
+        if (user._tags.indexOf(tag) === -1) {
+            user._tags.push(tag);
+            refreshTags();
 
-        addedTagCallback(tag);
+            addedTagCallback(tag);
+        }
     });
 };
 
