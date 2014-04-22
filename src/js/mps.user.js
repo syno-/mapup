@@ -64,7 +64,6 @@ Mps.User = (function() {
         },
         init: function() {
             this._events = [];
-            this._tags = [];
         }
     }); 
 
@@ -74,6 +73,7 @@ Mps.User = (function() {
     var User = EventObserver.extend({
         init: function(userdata) {
             this._super.apply(this, arguments);
+            this._tags = [];
             var self = this;
             self._latlng = null;
             self._marker = null;
@@ -82,6 +82,11 @@ Mps.User = (function() {
                 "username": {
                     value: null,
                     writable: true
+                },
+                "tags": {
+                    get: function() {
+                        return self._tags;
+                    }
                 },
                 "socketId": {
                     value: null,
@@ -151,6 +156,17 @@ Mps.User = (function() {
                 this.marker.latlng = userdata.marker;
             }
         },
+        save: function() {
+            var json = JSON.stringify({
+                username: this.username,
+                marker: {
+                    latlng: this.marker.latlng,
+                },
+                tags: this._tags,
+            });
+            localStorage.setItem('mps.user.myself', json);
+            Mps.log('Saved myself: json=', json);
+        },
         toUserdata: function() {
             return {
                 'username': this.username,
@@ -185,6 +201,14 @@ Mps.User = (function() {
         });
 
         return marker;
+    };
+
+    /**
+     *
+     */
+    User.loadMyself = function() {
+        var item = JSON.parse(localStorage.getItem('mps.user.myself'));
+        return item;
     };
 
     return User;

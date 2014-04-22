@@ -109,6 +109,10 @@ Mps.prototype.initFinished = function() {
                     // 自分が既に存在する
                 } else {
                     self._user = user;
+                    var savedMyself = Mps.User.loadMyself();
+                    if (savedMyself) {
+                    } else {
+                    }
                     user.private = true;
                     user.marker.latlng = {
                         lat: 34.701909 + Math.round(Math.random() * 100) / 10000, // TODO
@@ -197,6 +201,10 @@ Mps.prototype.initFinished = function() {
                 user.username = userdata.username;
                 self.r.log.add('ID[' + userdata.socketId + '] さんの名前が' + userdata.username + 'に更新されました。');
             }
+
+            if (self._user === user) {
+                self._user.save();
+            }
         }
     });
 
@@ -256,16 +264,17 @@ Mps.prototype.initMyself = function(user) {
     }
     function refreshTags() {
         self.r.$tags.empty();
-        user._tags.forEach(function(tag) {
+        user.tags.forEach(function(tag) {
             var $span = $('<span/>').addClass('tag').appendTo(self.r.$tags);
             $('<span/>').addClass('name').text(tag).appendTo($span);
             $('<span/>').addClass('remove').text('×').appendTo($span)
             .on('click', function(e) {
                 $span.remove();
 
-                var idx = user._tags.indexOf(tag);
+                var idx = user.tags.indexOf(tag);
                 if (idx >= 0) {
-                    user._tags.splice(idx, 1);
+                    user.tags.splice(idx, 1);
+                    user.save();
 
                     removedTagCallback(tag);
                 }
@@ -279,8 +288,9 @@ Mps.prototype.initMyself = function(user) {
 
         var tag = self.r.$tagsInput.val();
         self.r.$tagsInput.focus().val('');
-        if (user._tags.indexOf(tag) === -1) {
-            user._tags.push(tag);
+        if (user.tags.indexOf(tag) === -1) {
+            user.tags.push(tag);
+            user.save();
             refreshTags();
 
             addedTagCallback(tag);
