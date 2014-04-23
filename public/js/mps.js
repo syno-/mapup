@@ -500,16 +500,26 @@ Mps.User = (function() {
         init: function(userdata) {
             this._super.apply(this, arguments);
             this._tags = [];
+            this._username = null;
             var self = this;
             self._latlng = null;
             self._marker = null;
             self._private = false;
             Object.defineProperties(this, {
                 "username": {
-                    value: null,
-                    writable: true
+                    set: function(newValue) {
+                        self._username = newValue;
+                        self.emit('username.changed', [newValue]);
+                    },
+                    get: function() {
+                        return self._username;
+                    }
                 },
                 "tags": {
+                    set: function(newValue) {
+                        self._tags = newValue;
+                        self.emit('tags.init', [newValue]);
+                    },
                     get: function() {
                         return self._tags;
                     }
@@ -598,6 +608,7 @@ Mps.User = (function() {
                 'username': this.username,
                 'socketId': this.socketId,
                 'marker': this.marker.latlng,
+                'tags': this._tags,
             };
         },
     });
@@ -633,7 +644,13 @@ Mps.User = (function() {
      *
      */
     User.loadMyself = function() {
-        var item = JSON.parse(localStorage.getItem('mps.user.myself'));
+        var item = null;
+        try {
+            item = JSON.parse(localStorage.getItem('mps.user.myself'));
+        } catch (e) {
+            Mps.log('Illegal userdata', e);
+            localStorage.removeItem('mps.user.myself');
+        }
         return item;
     };
 
@@ -653,6 +670,7 @@ Mps.prototype.init = function() {
         $btnFold: $('#btn-fold'),
         $socketDisconnect: $('#socket-disconnect'),
         $formUsername: $('#form-username'),
+        $username: $('#form-username input[name="username"]'),
         $tags: $('#tags'),
         $tagsInput: $('#tags input[name="tags"]'),
         $formTags: $('#form-tags'),
@@ -742,28 +760,26 @@ Mps.prototype.initFinished = function() {
                     }
                 };
                 self._socket.emit('user.update', data);
+            }).on('username.changed', function(value) {
+                Mps.log('username.changed: ', value);
+                if (this.private) {
+                    // myself
+                    self.r.$username.val(value);
+                }
             });
 
             if (user.socketId === _socket.socket.transport.sessid) {
-                Mps.log('myself');
+                Mps.log('The user is myself.');
                 if (self._user) {
                     // 自分が既に存在する
                 } else {
                     self._user = user;
-                    var savedMyself = Mps.User.loadMyself();
-                    if (savedMyself) {
-                    } else {
-                    }
-                    user.private = true;
-                    user.marker.latlng = {
-                        lat: 34.701909 + Math.round(Math.random() * 100) / 10000, // TODO
-                        lng: 135.494977 + Math.round(Math.random() * 100) / 10000,
-                    };
                     self.initMyself(user);
                     self.r.log.add('あなたのIDは' + user.socketId + 'です。');
                 }
 
-                self._socket.emit('user.connect', user.toUserdata());
+                var sendUserdata = user.toUserdata();
+                self._socket.emit('user.connect', sendUserdata);
             } else {
                 Mps.log('other');
                 self.r.log.add('ID[' + userdata.socketId + '] さんが接続しました。');
@@ -880,8 +896,33 @@ Mps.prototype.initFinished = function() {
     }
 };
 
+/**
+ * initialize
+ */
 Mps.prototype.initMyself = function(user) {
     var self = this;
+
+    user.on('tags.init', function(value) {
+        Mps.log('tags.init: ', value);
+        if (this.private) {
+            refreshTags();
+        }
+    });
+
+    user.private = true;
+    var saved = Mps.User.loadMyself();
+    if (saved) {
+        Mps.log('  Restore myself');
+        user.marker.latlng = saved.marker.latlng;
+        user.username = saved.username;
+        user.tags = saved.tags;
+    } else {
+        Mps.log('  new myself');
+        user.marker.latlng = {
+            lat: 34.701909 + Math.round(Math.random() * 100) / 10000, // TODO
+            lng: 135.494977 + Math.round(Math.random() * 100) / 10000,
+        };
+    }
 
     // Username
     this.r.$formUsername.on('submit', function(e) {
@@ -900,8 +941,17 @@ Mps.prototype.initMyself = function(user) {
 
     // Tags
     function addedTagCallback(tag) {
+        // TODO: update/delete時のサーバへの送信
+        //self._socket.emit('user.update', {
+        //    socketId: user.socketId,
+        //    tags: user.tags,
+        //});
     }
     function removedTagCallback(tag) {
+        //self._socket.emit('user.update', {
+        //    socketId: user.socketId,
+        //    tags: user.tags,
+        //});
     }
     function refreshTags() {
         self.r.$tags.empty();
@@ -935,6 +985,7 @@ Mps.prototype.initMyself = function(user) {
             refreshTags();
 
             addedTagCallback(tag);
+            self.r.$tagsInput.focus();
         }
     });
 };

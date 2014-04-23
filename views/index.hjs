@@ -31,21 +31,8 @@
                         <input type="text" name="filter" class="form-control" placeholder="Filter" />
                     </div>
                 </form>
-                <!-- Single button -->
-                <div class="btn-group">
-                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                        Action <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu" role="menu">
-                        <li><a href="#">Action</a></li>
-                        <li><a href="#">Another action</a></li>
-                        <li><a href="#">Something else here</a></li>
-                        <li class="divider"></li>
-                        <li><a href="#">Separated link</a></li>
-                    </ul>
-                </div>
 
-                <h3>Info</h3>
+                <h3>My Info</h3>
                 <form id="form-username" method="POST" action=".">
                     <div class="input-group input-group-sm">
                         <span class="input-group-addon">Your name:</span>

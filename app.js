@@ -31,6 +31,11 @@ if ('development' == app.get('env')) {
 
 app.get('/', routes.index);
 app.get('/users', user.list);
+app.get('/tags', function(req, res) {
+    var clients = getClients(io.sockets.sockets);
+
+    res.end(JSON.stringify(clients));
+});
 
 var server = http.createServer(app);
 server.listen(app.get('port'), function() {
@@ -90,24 +95,32 @@ io.sockets.on('connection', function(socket) {
     socket.on('user.connect', function(userdata) {
         console.log('user.connect, latlng=', userdata.marker);
 
-        socket.set('marker', userdata.marker, function () {
-            //console.log('stored=', socket.store.data);
+        setData(userdata, function() {
             io.sockets.emit('user.connect', userdata);
         });
     });
     socket.on('user.update', function(userdata) {
         console.log('user.update');
 
-        socket.set('username', userdata.username, function () {
-            socket.set('marker', userdata.marker, function () {
-                io.sockets.emit('user.update', {
-                    socketId: socket.id,
-                    marker: userdata.marker,
-                    username: userdata.username,
-                });
+        setData(userdata, function() {
+            io.sockets.emit('user.update', {
+                socketId: socket.id,
+                marker: userdata.marker,
+                username: userdata.username,
+                tags: userdata.tags,
             });
         });
     });
+
+    function setData(userdata, cb) {
+        socket.set('username', userdata.username, function () {
+            socket.set('marker', userdata.marker, function () {
+                socket.set('tags', userdata.tags, function () {
+                    cb();
+                });
+            });
+        });
+    }
 
 });
 

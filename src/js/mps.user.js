@@ -74,16 +74,26 @@ Mps.User = (function() {
         init: function(userdata) {
             this._super.apply(this, arguments);
             this._tags = [];
+            this._username = null;
             var self = this;
             self._latlng = null;
             self._marker = null;
             self._private = false;
             Object.defineProperties(this, {
                 "username": {
-                    value: null,
-                    writable: true
+                    set: function(newValue) {
+                        self._username = newValue;
+                        self.emit('username.changed', [newValue]);
+                    },
+                    get: function() {
+                        return self._username;
+                    }
                 },
                 "tags": {
+                    set: function(newValue) {
+                        self._tags = newValue;
+                        self.emit('tags.init', [newValue]);
+                    },
                     get: function() {
                         return self._tags;
                     }
@@ -172,6 +182,7 @@ Mps.User = (function() {
                 'username': this.username,
                 'socketId': this.socketId,
                 'marker': this.marker.latlng,
+                'tags': this._tags,
             };
         },
     });
@@ -207,7 +218,13 @@ Mps.User = (function() {
      *
      */
     User.loadMyself = function() {
-        var item = JSON.parse(localStorage.getItem('mps.user.myself'));
+        var item = null;
+        try {
+            item = JSON.parse(localStorage.getItem('mps.user.myself'));
+        } catch (e) {
+            Mps.log('Illegal userdata', e);
+            localStorage.removeItem('mps.user.myself');
+        }
         return item;
     };
 
