@@ -110,6 +110,10 @@ Mps.User = (function() {
                     value: null,
                     writable: true
                 },
+                /**
+                 * 自分自身かどうか。
+                 * ドラッグの判定や、地図のピンの色へ影響。
+                 */
                 "private": {
                     set: function(newValue) {
                         self._private = newValue;

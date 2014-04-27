@@ -25,12 +25,9 @@
             <button id="btn-fold" class="btn btn-default"></button>
 
             <div id="menu-contents">
-                <h3>Filter</h3>
+                <h3>Tag Filter</h3>
                 <form id="form-filter" method="POST" action=".">
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-addon">Tag search:</span>
-                        <input type="text" name="filter" class="typeahead form-control" placeholder="Filter" />
-                    </div>
+                    <input type="text" name="filter" class="typeahead form-control" placeholder="Filter" />
                 </form>
 
                 <h3>My Info</h3>
