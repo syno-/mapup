@@ -113,13 +113,27 @@ io.sockets.on('connection', function(socket) {
     });
 
     function setData(userdata, cb) {
-        socket.set('username', userdata.username, function () {
-            socket.set('marker', userdata.marker, function () {
-                socket.set('tags', userdata.tags, function () {
-                    cb();
+        var progress = 0;
+        var maxProgress = 0;
+        ['username', 'marker', 'tags'].forEach(function(prop, i) {
+            if (userdata[prop] !== undefined) {
+                maxProgress++;
+                socket.set(prop, userdata[prop], function () {
+                    console.log('setData', arguments);
+                    progress++;
+                    if (maxProgress === progress) {
+                        cb();
+                    }
                 });
-            });
+            }
         });
+        //socket.set('username', userdata.username, function () {
+        //    socket.set('marker', userdata.marker, function () {
+        //        socket.set('tags', userdata.tags, function () {
+        //            cb();
+        //        });
+        //    });
+        //});
     }
 
 });

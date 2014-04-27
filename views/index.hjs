@@ -14,6 +14,7 @@
         <script type="text/javascript" src="/js/libs/jquery-2.1.0.min.js"></script>
         <script type="text/javascript" src="/js/libs/bootstrap.min.js"></script>
         <script type="text/javascript" src="/js/libs/spin.min.js"></script>
+        <script type="text/javascript" src="/js/libs/typeahead.bundle.min.js"></script>
         <script type="text/javascript" src="/socket.io/socket.io.js"></script>
         <script type="text/javascript" src="/js/mps.js"></script>
     </head>
@@ -28,7 +29,7 @@
                 <form id="form-filter" method="POST" action=".">
                     <div class="input-group input-group-sm">
                         <span class="input-group-addon">Tag search:</span>
-                        <input type="text" name="filter" class="form-control" placeholder="Filter" />
+                        <input type="text" name="filter" class="typeahead form-control" placeholder="Filter" />
                     </div>
                 </form>
 

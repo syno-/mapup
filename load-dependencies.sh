@@ -29,9 +29,16 @@ load()
 
 	local SPIN_JS_FILENAME="spin.min.js"
 	if [ ! -f $PATH_JSLIB/$SPIN_JS_FILENAME ]; then
-		echo "Downloading jQuery..."
+		echo "Downloading spin.js..."
 		mkdir -p $PATH_JSLIB
 		curl -o $PATH_JSLIB/${SPIN_JS_FILENAME} -L http://fgnass.github.io/spin.js/${SPIN_JS_FILENAME}
+	fi
+
+	local TYPEAHEAD_JS_FILENAME="typeahead.bundle.min.js"
+	if [ ! -f $PATH_JSLIB/$TYPEAHEAD_JS_FILENAME ]; then
+		echo "Downloading typeahead.js..."
+		mkdir -p $PATH_JSLIB
+		curl -o $PATH_JSLIB/${TYPEAHEAD_JS_FILENAME} -L http://twitter.github.com/typeahead.js/releases/latest/${TYPEAHEAD_JS_FILENAME}
 	fi
 
 	echo "Done!"

@@ -129,6 +129,7 @@ Mps.prototype.initFinished = function() {
             self._users.push(user);
             //Mps.log('接続方式: ' + _socket.socket.transport.name);
         } else {
+            // TODO: 自分自身が接続しなおしたとき。
             // 自分自身
             //self.r.log.add('[' + userdata.socketId + '] 接続しました。');
             Mps.log('重複するユーザが検出されました。', userdata);
@@ -283,17 +284,17 @@ Mps.prototype.initMyself = function(user) {
 
     // Tags
     function addedTagCallback(tag) {
-        // TODO: update/delete時のサーバへの送信
-        //self._socket.emit('user.update', {
-        //    socketId: user.socketId,
-        //    tags: user.tags,
-        //});
+        // update/delete時のサーバへの送信
+        self._socket.emit('user.update', {
+            socketId: user.socketId,
+            tags: user.tags,
+        });
     }
     function removedTagCallback(tag) {
-        //self._socket.emit('user.update', {
-        //    socketId: user.socketId,
-        //    tags: user.tags,
-        //});
+        self._socket.emit('user.update', {
+            socketId: user.socketId,
+            tags: user.tags,
+        });
     }
     function refreshTags() {
         self.r.$tags.empty();
