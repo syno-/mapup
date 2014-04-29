@@ -142,6 +142,14 @@ Mps.User = (function() {
                         return self._latlng;
                     }
                 },
+                "isVisible":{
+                    set: function(newValue) {
+                        self._marker.setVisible(newValue);
+                    },
+                    get: function() {
+                        return self._marker.getVisible();
+                    }
+                },
                 "ref": {
                     set: function(newValue) {
                         self._marker = newValue;

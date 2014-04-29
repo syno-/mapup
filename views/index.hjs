@@ -27,7 +27,16 @@
             <div id="menu-contents">
                 <h3>Tag Filter</h3>
                 <form id="form-filter" method="POST" action=".">
-                    <input type="text" name="filter" class="typeahead form-control" placeholder="Filter" />
+                    <div class="input-group">
+                        <div id="tags-filter" class="tags">
+                        </div>
+                        <div class="input-group-btn">
+                            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">Tags<span class="caret"></span></button>
+                            <ul class="dropdown-menu pull-right">
+                            </ul>
+                        </div><!-- /btn-group -->
+                    </div><!-- /input-group -->
+
                 </form>
 
                 <h3>My Info</h3>
@@ -38,8 +47,8 @@
                     </div>
                 </form>
                 <form id="form-tags" method="POST" action=".">
-                    <div id="tags">
-                        <input type="text" name="tags" autocomplete="off" />
+                    <div id="tags" class="tags">
+                        <input type="text" name="tags" autocomplete="off" placeholder="My tags..." />
                     </div>
                 </form>
 

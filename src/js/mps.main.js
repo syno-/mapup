@@ -13,6 +13,8 @@ Mps.prototype.init = function() {
         $socketDisconnect: $('#socket-disconnect'),
         $formUsername: $('#form-username'),
         $username: $('#form-username input[name="username"]'),
+        $tagsFilter: $('#tags-filter'),
+        $formFilterMenu: $('#form-filter .dropdown-menu'),
         $tags: $('#tags'),
         $tagsInput: $('#tags input[name="tags"]'),
         $formTags: $('#form-tags'),
@@ -30,6 +32,7 @@ Mps.prototype.init = function() {
      * ユーザの一覧
      */
     this._users = [];
+    this._tagsFilter = [];
 
     this.initMaps();
     this.initSocketio();
@@ -201,6 +204,8 @@ Mps.prototype.initFinished = function() {
                 user.username = userdata.username;
                 self.r.log.add('ID[' + userdata.socketId + '] さんの名前が' + userdata.username + 'に更新されました。');
             }
+            if (userdata.tags) {
+            }
 
             if (self._user === user) {
                 self._user.save();
@@ -236,57 +241,6 @@ Mps.prototype.initFinished = function() {
                 width: '52px'
             });
         }
-    }
-
-    initTagFilter();
-    function initTagFilter() {
-        var substringMatcher = function(strs) {
-            return function findMatches(q, cb) {
-                var matches, substringRegex;
-
-                // an array that will be populated with substring matches
-                matches = [];
-
-                // regex used to determine if a string contains the substring `q`
-                substrRegex = new RegExp(q, 'i');
-
-                // iterate through the pool of strings and for any string that
-                // contains the substring `q`, add it to the `matches` array
-                $.each(strs, function(i, str) {
-                    if (substrRegex.test(str)) {
-                        // the typeahead jQuery plugin expects suggestions to a
-                        // JavaScript object, refer to typeahead docs for more info
-                        matches.push({ value: str });
-                    }
-                });
-
-                cb(matches);
-                setTimeout(function() {
-                    console.log('');
-                });
-            };
-        };
-
-        var states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California',
-            'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii',
-            'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana',
-            'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota',
-            'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire',
-            'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota',
-            'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island',
-            'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont',
-            'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'
-        ];
-
-        $('#form-filter .typeahead').typeahead({
-            hint: true,
-            highlight: true,
-            minLength: 1
-        }, {
-            name: 'states',
-            displayKey: 'value',
-            source: substringMatcher(states)
-        });
     }
 };
 
@@ -350,12 +304,7 @@ Mps.prototype.initMyself = function(user) {
     function refreshTags() {
         self.r.$tags.empty();
         user.tags.forEach(function(tag) {
-            var $span = $('<span/>').addClass('tag').appendTo(self.r.$tags);
-            $('<span/>').addClass('name').text(tag).appendTo($span);
-            $('<span/>').addClass('remove').text('×').appendTo($span)
-            .on('click', function(e) {
-                $span.remove();
-
+            var $span = createTagEl(tag, function(e, tag) {
                 var idx = user.tags.indexOf(tag);
                 if (idx >= 0) {
                     user.tags.splice(idx, 1);
@@ -367,6 +316,62 @@ Mps.prototype.initMyself = function(user) {
             $('<input type="hidden"/>').addClass('tag').text(tag).appendTo($span);
         });
         self.r.$tags.append(self.r.$tagsInput);
+
+        refreshTagList();
+    }
+    function refreshTagsFilter() {
+        self.r.$tagsFilter.empty();
+        self._tagsFilter.forEach(function(tag) {
+            var $span = createTagEl(tag, function(e, tag) {
+                var idx = self._tagsFilter.indexOf(tag);
+                if (idx >= 0) {
+                    self._tagsFilter.splice(idx, 1);
+                }
+                refreshTagsFilter();
+            });
+            self.r.$tagsFilter.append($span);
+        });
+        console.log('self._tagsFilter', self._tagsFilter);
+        refreshMaps();
+    }
+    // Mapの表示/非表示の切り替え
+    function refreshMaps() {
+        Mps.log('refreshMaps', 'tagsFilter', self._tagsFilter);
+        var isEmpty = (self._tagsFilter.length === 0);
+        self._users.forEach(function(user) {
+            if (isEmpty) {
+                user.marker.isVisible = true;
+            } else {
+                var isTagExists = false;
+                user.tags.forEach(function(tag) {
+                    if (self._tagsFilter.indexOf(tag) >= 0) {
+                        isTagExists = true;
+                    }
+                });
+                Mps.log('refreshMaps', 'user:', user.socketId, 'isTagExists:', isTagExists);
+                if (isTagExists) {
+                    user.marker.isVisible = true;
+                } else {
+                    user.marker.isVisible = false;
+                }
+            }
+        });
+    }
+    /**
+     * @param {String} tag
+     * @param {Function} removeCallback
+     * @return {jQuery} span element
+     */
+    function createTagEl(tag, removeCallback) {
+        var $span = $('<span/>').addClass('tag').appendTo(self.r.$tags);
+        $('<span/>').addClass('name').text(tag).appendTo($span);
+        $('<span/>').addClass('remove').text('×').appendTo($span)
+        .on('click', function(e) {
+            $span.remove();
+
+            removeCallback.call(this, e, tag);
+        });
+        return $span;
     }
     this.r.$formTags.on('submit', function(e) {
         e.preventDefault();
@@ -382,6 +387,24 @@ Mps.prototype.initMyself = function(user) {
             self.r.$tagsInput.focus();
         }
     });
+
+    function refreshTagList() {
+        self.r.$formFilterMenu.empty();
+
+        self._users.forEach(function(user) {
+            user.tags.forEach(function(tag) {
+                $('<li>').text(tag).click(onClickTag).appendTo(self.r.$formFilterMenu);
+            });
+        });
+    }
+    function onClickTag(e) {
+        var $this = $(this);
+        var tag = $this.text();
+        if (self._tagsFilter.indexOf(tag) === -1) {
+            self._tagsFilter.push(tag);
+            refreshTagsFilter();
+        }
+    }
 };
 
 Mps.prototype.getUserBySocketId = function(socketId) {
