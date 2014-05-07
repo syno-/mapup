@@ -127,13 +127,6 @@ io.sockets.on('connection', function(socket) {
                 });
             }
         });
-        //socket.set('username', userdata.username, function () {
-        //    socket.set('marker', userdata.marker, function () {
-        //        socket.set('tags', userdata.tags, function () {
-        //            cb();
-        //        });
-        //    });
-        //});
     }
 
 });

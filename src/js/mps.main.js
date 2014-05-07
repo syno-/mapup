@@ -69,47 +69,13 @@ $.extend(Mps.prototype, {
         //});
 
         function addUser(userdata) {
-            Mps.log('userdata=', userdata);
+            Mps.log('addUser, userdata=', userdata);
             var user = self.getUserBySocketId(userdata.socketId);
             if (!user) {
                 userdata.map = self._map;
-                user = new Mps.User(userdata).on('marker.click', function(e) {
-                    //self._map.setZoom(12);
-                    self._map.setCenter(this.marker.ref.getPosition());
-
-                    if (!user.infoWindow) {
-                        user.infoWindow = new google.maps.InfoWindow({
-                            //size: new google.maps.Size(250, 150)
-                        });
-                    } else {
-                        //google.maps.event.clearInstanceListeners(infoWindow);
-                        //infoWindow.close();
-                        //infoWindow = null;
-                    }
-                    user.infoWindow.setContent('username: ' + user.username + '\nID[' + user.socketId + ']');
-
-                    user.infoWindow.open(self._map, this.marker.ref);
-                }).on('marker.dragend', function(e) {
-                    Mps.log('marker dragged', e);
-
-                    var data = {
-                        socketId: user.socketId,
-                        marker: {
-                            lat: e.latLng.k,
-                            lng: e.latLng.A
-                        }
-                    };
-                    self._socket.emit('user.update', data);
-                }).on('username.changed', function(value) {
-                    Mps.log('username.changed: ', value);
-                    if (this.private) {
-                        // myself
-                        self.r.$username.val(value);
-                    }
-                });
+                user = createUser(userdata);
 
                 if (user.socketId === _socket.socket.transport.sessid) {
-                    Mps.log('The user is myself.');
                     if (self._user) {
                         // 自分が既に存在する
                     } else {
@@ -119,33 +85,105 @@ $.extend(Mps.prototype, {
                     }
 
                     var sendUserdata = user.toUserdata();
+                    Mps.log('addUser, add myelf: ', sendUserdata);
                     self._socket.emit('user.connect', sendUserdata);
                 } else {
-                    Mps.log('other');
+                    Mps.log('addUser, other');
                     self.r.log.add('ID[' + userdata.socketId + '] さんが接続しました。');
                 }
+
                 self._users.push(user);
                 //Mps.log('接続方式: ' + _socket.socket.transport.name);
             } else {
                 // TODO: 自分自身が接続しなおしたとき。
+                //if (user.socketId === _socket.socket.transport.sessid) {
+                //    var updateUserdata = user.toUserdata();
+                //    self._socket.emit('user.update', updateUserdata);
+                //}
                 // 自分自身
                 //self.r.log.add('[' + userdata.socketId + '] 接続しました。');
-                Mps.log('重複するユーザが検出されました。', userdata);
+                Mps.log('addUser, 重複するユーザが検出されました。', userdata);
             }
 
             return user;
         }
 
         function removeUser(user) {
-            var marker = user.marker.ref;
-            if (marker) {
-                marker.setMap(null);
+            var idx = -1;
+            self._users.forEach(function(user_, i) {
+                if (user.socketId === user_.socketId) {
+                    idx = i;
+                    return false;
+                }
+            });
+            if (idx >= 0) {
+                user.destroy();
+                self._users.splice(idx, 1);
             }
+        }
+
+        function createInfoWindowMessage(user) {
+            var $root = $('<div/>').addClass('infowindow');
+            if (user.username) {
+                $('<p>').text(user.username).appendTo($root);
+            }
+            if (user.tags) {
+                var msg;
+                if (user.tags.length > 0) {
+                    msg = 'タグ: ' + user.tags.join(',');
+                } else {
+                    msg = 'タグ: (なし)';
+                }
+                $('<p>').text(msg).appendTo($root);
+            }
+
+            var html = $root[0].outerHTML;
+            //console.log('html', html);
+            return html;
+        }
+
+        function createUser(userdata) {
+            var user = new Mps.User(userdata).on('marker.click', function(e) {
+                //self._map.setZoom(12);
+                //self._map.setCenter(this.marker.ref.getPosition());
+
+                if (!user.infoWindow) {
+                    user.infoWindow = new google.maps.InfoWindow({
+                        //size: new google.maps.Size(250, 150)
+                    });
+                } else {
+                    //google.maps.event.clearInstanceListeners(infoWindow);
+                    //infoWindow.close();
+                    //infoWindow = null;
+                }
+                user.infoWindow.setContent(createInfoWindowMessage(user));
+
+                user.infoWindow.open(self._map, this.marker.ref);
+            }).on('marker.dragend', function(e) {
+                Mps.log('marker dragged', e);
+
+                var data = {
+                    socketId: user.socketId,
+                    marker: {
+                        lat: e.latLng.k,
+                        lng: e.latLng.A
+                    }
+                };
+                self._socket.emit('user.update', data);
+            }).on('username.changed', function(value) {
+                Mps.log('username.changed: ', value);
+                if (this.private) {
+                    // myself
+                    self.r.$username.val(value);
+                }
+            });
+
+            return user;
         }
 
         function removeAllUsers() {
             self._users.forEach(function(user) {
-                removeUser(user);
+                user.destroy();
             });
             self._users = [];
         }
@@ -177,11 +215,11 @@ $.extend(Mps.prototype, {
             self.r.log.add('ID[' + connection.id + '] さんが切断しました。');
 
             // delete user
-            self._users = self._users.filter(function(user) {
-                if (user.socketId !== connection.id) {
+            self._users.forEach(function(user_, i) {
+                if (user_.socketId !== connection.id) {
                     return true;
                 }
-                removeUser(user);
+                removeUser(user_);
                 return false;
             });
         });
@@ -200,6 +238,8 @@ $.extend(Mps.prototype, {
                     self.r.log.add('ID[' + userdata.socketId + '] さんの名前が' + userdata.username + 'に更新されました。');
                 }
                 if (userdata.tags) {
+                    user.tags = userdata.tags;
+                    self.r.log.add('ID[' + userdata.socketId + '] さんのタグが修正されました。');
                 }
 
                 if (self._user === user) {
@@ -246,6 +286,8 @@ $.extend(Mps.prototype, {
             if (this.private) {
                 refreshTags();
             }
+        }).on('user.update', function(userdata) {
+            refreshTagsFilter();
         });
 
         user.private = true;

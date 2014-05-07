@@ -95,6 +95,7 @@ module.exports = function(grunt) {
                 ],
                 tasks: [
                     'jshint',
+                    'sass',
                     'concat',
                 ],
                 options: {

@@ -177,6 +177,18 @@ Mps.User = (function() {
             if (userdata.marker) {
                 this.marker.latlng = userdata.marker;
             }
+            if (userdata.tags) {
+                this._tags = userdata.tags;
+            }
+        },
+        destroy: function() {
+            var marker = self._marker;
+            if (marker) {
+                marker.setMap(null);
+            }
+            if (this.infoWindow) {
+                this.infoWindow.close();
+            }
         },
         save: function() {
             var json = JSON.stringify({
