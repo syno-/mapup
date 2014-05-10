@@ -2,8 +2,8 @@
 
 load()
 {
-	local PATH_JSLIB="js/libs"
-	local PATH_CSSLIB="css/libs"
+	local PATH_JSLIB="libs/js"
+	local PATH_CSSLIB="libs/css"
 	local PATH_FONTS="fonts"
 
 	local JQUERY_FILENAME="jquery-2.1.0.min.js"

@@ -6,15 +6,17 @@
         <title>{{ title }}</title>
 
         <link rel="stylesheet" href="/css/index.css">
-        <link rel="stylesheet" href="/css/libs/bootstrap-theme.min.css">
-        <link rel="stylesheet" href="/css/libs/bootstrap.min.css">
+        <link rel="stylesheet" href="/libs/css/bootstrap-theme.min.css">
+        <link rel="stylesheet" href="/libs/css/bootstrap.min.css">
 
         <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyB91R_kufMhnZTSpymKpgOx6DmwJMKLDz0&amp;sensor=false&amp;region=JP"></script>
 
-        <script type="text/javascript" src="/js/libs/jquery-2.1.0.min.js"></script>
-        <script type="text/javascript" src="/js/libs/bootstrap.min.js"></script>
-        <script type="text/javascript" src="/js/libs/spin.min.js"></script>
-        <script type="text/javascript" src="/js/libs/typeahead.bundle.min.js"></script>
+        <script type="text/javascript" src="/libs/js/jquery-2.1.0.min.js"></script>
+        <script type="text/javascript" src="/libs/js/bootstrap.min.js"></script>
+        <script type="text/javascript" src="/libs/js/spin.min.js"></script>
+        <!--
+        <script type="text/javascript" src="/libs/js/typeahead.bundle.min.js"></script>
+        -->
         <script type="text/javascript" src="/socket.io/socket.io.js"></script>
         <script type="text/javascript" src="/js/mps.js"></script>
     </head>
