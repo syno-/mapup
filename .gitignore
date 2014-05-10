@@ -17,8 +17,7 @@ npm-debug.log
 # Build data
 ##############
 
-public/js/libs
-public/css/libs
+public/libs
 public/fonts
 public/**/*.min.js
 
