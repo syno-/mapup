@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+cd `dirname "${0}"`
+defaultPath=`pwd`
 load()
 {
 	local PATH_JSLIB="libs/js"
@@ -44,7 +46,19 @@ load()
 	echo "Done!"
 }
 
+# load depenencies
+cd $defaultPath
 cd public
 load
+
+# init meetup.js
+cd $defaultPath
+pwd
+cd meetup.js/
+npm i
+cd SimpleWebRTC/ && npm i && cd ../
+cd signalmaster/ && npm i && cd ../
+grunt release
+cp -R release ../public/libs/meetup.js
 
 
