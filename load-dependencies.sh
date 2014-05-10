@@ -55,6 +55,7 @@ load
 cd $defaultPath
 pwd
 cd meetup.js/
+git submodule update --init
 npm i
 cd SimpleWebRTC/ && npm i && cd ../
 cd signalmaster/ && npm i && cd ../
