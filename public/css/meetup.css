@@ -1,0 +1,42 @@
+.container h1, .container h2 {
+  border-bottom: 1px solid #EEE;
+}
+.container #meetup {
+  display: none;
+}
+.container .table {
+  display: table;
+  width: 100%;
+}
+.container .row {
+  display: table-cell;
+}
+.container .row-center {
+  vertical-align: middle;
+  text-align: center;
+}
+.container .presence {
+  width: 300px;
+}
+.container .alert-permit {
+  border: 1px solid #2D579A;
+  margin: 20px auto;
+  padding: 10px;
+  border-radius: 1em/1em;
+  width: 500px;
+}
+.container .alert-permit .row:first-child {
+  width: 64px;
+  margin-right: 35px;
+  vertical-align: middle;
+}
+.container .alert-permit .row:last-child {
+  vertical-align: middle;
+}
+.container #localVideo {
+  width: 200px;
+  height: 200px;
+}
+.container .speaking {
+  border: 3px solid #23AC0E;
+}

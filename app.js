@@ -10,7 +10,7 @@ var http = require('http');
 var path = require('path');
 require('colors');
 
-var app = express();
+var app = module.exports = express();
 
 // all environments
 app.set('port', process.env.PORT || 8000);
@@ -31,6 +31,11 @@ if ('development' == app.get('env')) {
 
 app.get('/', routes.index);
 app.get('/users', user.list);
+app.get('/room', function(req, res) {
+    res.render('meetup', {
+        title: 'meetup',
+    });
+});
 app.get('/tags', function(req, res) {
     var clients = getClients(io.sockets.sockets);
 
@@ -45,7 +50,8 @@ server.listen(app.get('port'), function() {
 require('./show-addrs').show(app.get('port'));
 
 var socketIO = require('socket.io');
-var io = socketIO.listen(server);
+var io = module.exports = socketIO.listen(server);
+var signalmaster = require('./signalmaster');
 
 function getClients(roomClients) {
     var r = [];
@@ -72,6 +78,7 @@ function getClients(roomClients) {
 io.sockets.on('connection', function(socket) {
     console.log('connection, id=', socket.id);
     //console.log('connection, sockets=', io.sockets.sockets);
+    signalmaster.connection.apply(this, arguments);
 
     var clients = getClients(io.sockets.sockets);
     socket.emit('user.list', clients);

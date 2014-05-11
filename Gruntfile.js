@@ -22,10 +22,15 @@ module.exports = function(grunt) {
                         'mps.main.js',
                     ]
                 },
-                css: {
-                    out: 'index.css',
-                    file: 'index.scss',
-                }
+            },
+            meetup: {
+                js: {
+                    out: 'meetup.js',
+                    //min: 'meetup.min.js',
+                    files: [
+                        'meetup.main.js',
+                    ]
+                },
             },
         },
         release: {
@@ -56,6 +61,22 @@ module.exports = function(grunt) {
                 })(),
                 dest: path.release.js + path.src.index.js.out,
             },
+            meetup: {
+                src: (function() {
+                    var list = [];
+                    path.src.meetup.js.files.forEach(function(file) {
+                        list.push(path.src.js + file);
+                    });
+                    return list;
+                })(),
+                dest: path.release.js + path.src.meetup.js.out,
+            },
+            signalmaster: {
+                src: [
+                    path.src.js + 'signalmaster.main.js',
+                ],
+                dest: 'signalmaster.js'
+            },
         },
         uglify: {
 //            build: {
@@ -82,9 +103,21 @@ module.exports = function(grunt) {
                 },
                 files: (function() {
                     var r = {};
-                    r[path.release.css + path.src.index.css.out] = path.src.css + path.src.index.css.file;
+                    r[path.release.css + 'index.css'] = path.src.css + 'index.scss';
+                    r[path.release.css + 'meetup.css'] = path.src.css + 'meetup.scss';
                     return r;
                 })()
+            }
+        },
+        copy: {
+            meetupjs: {
+                files: [{
+                    expand: true,
+                    flatten: true,
+                    src: ['meetup.js/release/**'],
+                    dest: 'public/libs/meetup.js/',
+                    filter: 'isFile'
+                }]
             }
         },
         watch: {
@@ -92,6 +125,7 @@ module.exports = function(grunt) {
                 files: [
                     'Gruntfile.js',
                     path.src.js + '**/*.js',
+                    'meetup.js/build/**/*.js',
                 ],
                 tasks: [
                     'jshint',
@@ -121,14 +155,20 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-watch');
     grunt.loadNpmTasks('grunt-contrib-sass');
     grunt.loadNpmTasks('grunt-contrib-jshint');
+    grunt.loadNpmTasks('grunt-contrib-copy');
 
     grunt.registerTask('indexjs', [
                        'jshint',
                        'concat',
-                       'uglify',
+                       //'uglify',
                        'sass',
+                       'copy:meetupjs',
     ]);
     grunt.registerTask('release', [
-                       'indexjs',
+                       'jshint',
+                       'concat',
+                       //'uglify',
+                       'sass',
+                       'copy:meetupjs',
     ]);
 };
