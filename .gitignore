@@ -21,6 +21,7 @@ public/libs
 public/fonts
 public/**/*.min.js
 
-public/js/index.js
-public/css/index.css
+#public/js/index.js
+public/js
+public/css
 
