@@ -34,8 +34,9 @@ Mps.Dialog = (function() {
         return d;
     };
 
-    var DialogProto = Class.extend({
+    var DialogProto = Mps.EventObserver.extend({
         init: function(dlgId) {
+            this._super.apply(this, arguments);
             this._dlgId = dlgId;
         },
         initBootstrap: function() {
@@ -89,6 +90,68 @@ Mps.Dialog = (function() {
                 DialogProto.prototype.initBootstrap.apply(this, arguments);
                 this.hide();
             }
+        }),
+        'dlg-photo': DialogProto.extend({
+            init: function(dlgId) {
+                this._super.apply(this, arguments);
+                this.initBootstrap();
+                var self = this;
+                this._$.on('hide.bs.modal', function(e) {
+                });
+                var $dlg = this._$.find('.modal-dialog');
+                var $body = this._$.find('.modal-body');
+                this.$start = $('#photo-start').click(function(e) {
+                    self.stopVideo();
+                });
+                this.$onemore = $('#photo-onemore').click(function(e) {
+                    self.startVideo();
+                });
+                this.$ok = $('#photo-ok').click(function(e) {
+                    self.emit('ok', [e, self.$video.width(), self.$video.height()]);
+                    self._$.modal('hide');
+                });
+                this.$video = $('#photo-video').resize(function(e) {
+                    var $this = $(this);
+                    var padding = parseInt($body.css('padding'), 10);
+                    $dlg.css({
+                        'width': ($this.width() + padding * 2) + 'px',
+                        //'height': $this.height(),
+                        //'margin-left': (-$this.width() / 2) + 'px',
+                    });
+                });
+
+                self.startVideo();
+            },
+            startVideo: function() {
+                var self = this;
+                if (!self.stream) {
+                    Mps.getUserMedia({
+                        video: true,
+                        audio: false
+                    }, function(stream) {
+                        self.stream = stream;
+                        var url = window.URL.createObjectURL(self.stream);
+                        self.$video.attr('src', url);
+                    }, function(error) {
+                        console.error("getUserMedia error: ", error.code);
+                    });
+                }
+            },
+            capture: function(canvasContext, width, height) {
+                console.log(canvasContext, width, height);
+                canvasContext.drawImage(this.$video[0], 0, 0, width, height);
+                //context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            },
+            stopVideo: function() {
+                var self = this;
+                if (self.stream) {
+                    self.stream.stop();
+                    self.stream = null;
+                }
+            },
+            show: function() {
+                this._$.modal();
+            },
         }),
         disconnected: DialogProto.extend({
             init: function(dlgId) {

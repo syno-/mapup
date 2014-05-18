@@ -20,7 +20,10 @@ $.extend(Mps.prototype, {
             log: new Mps.Log('log', {
                 limit: 100
             }),
-            spin: Mps.Dialog('spin')
+            spin: Mps.Dialog('spin'),
+            dlgPhoto: Mps.Dialog('dlg-photo'),
+            $photo: $('#photo'),
+            photoContext: $('#photo')[0].getContext('2d'),
         };
         if (Mps.DEBUG) {
             window.r = this.r;
@@ -35,6 +38,11 @@ $.extend(Mps.prototype, {
         this.initMaps();
         this.initSocketio();
         this.initFinished();
+
+        this.r.dlgPhoto.on('ok', function(e, w, h) {
+            this.capture(self.r.photoContext, self.r.$photo.width(), self.r.$photo.height());
+        });
+        this.r.dlgPhoto.show();
     },
     initMaps: function() {
         this._map = new google.maps.Map(this.r.$map[0], {

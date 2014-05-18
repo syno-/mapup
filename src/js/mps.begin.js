@@ -43,6 +43,9 @@ if (typeof Mps === "undefined") {
         return l;
     })(window.Mps.DEBUG);
 
+    Mps.getUserMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia).bind(navigator);
+    Mps.URL = (window.URL || window.webkitURL).bind(window);
+
     Mps.Queries = (function() {
         var queryStr = window.location.search;
         var result = {};

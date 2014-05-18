@@ -27,6 +27,11 @@
             <button id="btn-fold" class="btn btn-default"></button>
 
             <div id="menu-contents">
+                <h3>MyImage</h3>
+                <div>
+                    <canvas id="photo" width="237" height="178"></canvas>
+                </div>
+
                 <h3>Tag Filter</h3>
                 <form id="form-filter" method="POST" action=".">
                     <div class="input-group">
@@ -61,5 +66,25 @@
 
         <div id="log" class="container mps-overlay"></div>
 
+        <div  class="modal fade" id="dlg-photo" tabindex="-1" role="dialog" aria-labelledby="take-a-photo" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                        <h4 class="modal-title">Take a picture</h4>
+                    </div>
+                    <div class="modal-body">
+                        <div>
+                            <video id="photo-video" autoplay></video>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" id="photo-start" class="btn btn-danger">Snap</button>
+                        <button type="button" id="photo-onemore" class="btn btn-primary">One more</button>
+                        <button type="button" id="photo-ok" class="btn btn-danger">OK</button>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!-- /.modal -->
     </body>
 </html>

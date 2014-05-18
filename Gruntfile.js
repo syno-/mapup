@@ -14,6 +14,7 @@ module.exports = function(grunt) {
                     min: 'mps.min.js',
                     files: [
                         'mps.begin.js',
+                        'mps.eventobserver.js',
                         'mps.log.js',
                         'mps.dialog.js',
                         'mps.geolocation.js',
@@ -131,6 +132,7 @@ module.exports = function(grunt) {
                     'jshint',
                     'sass',
                     'concat',
+                    //'uglify:debug',
                 ],
                 options: {
                     interrupt: true,
@@ -159,9 +161,9 @@ module.exports = function(grunt) {
 
     grunt.registerTask('indexjs', [
                        'jshint',
+                       'sass',
                        'concat',
                        //'uglify',
-                       'sass',
                        'copy:meetupjs',
     ]);
     grunt.registerTask('release', [
