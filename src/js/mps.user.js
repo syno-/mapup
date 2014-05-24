@@ -131,8 +131,8 @@ Mps.User = (function() {
             if (userdata.tags) {
                 this._tags = userdata.tags;
             }
-            if (userdata._imageName) {
-                this._imageName = userdata._imageName;
+            if (userdata.imageName) {
+                this.imageName = userdata.imageName;
             }
         },
         setIcon: function(imageName) {
