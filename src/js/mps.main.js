@@ -236,6 +236,7 @@ $.extend(Mps.prototype, {
             userdataList.forEach(function(userdata) {
                 addUser(userdata);
             });
+            self.refreshTagList();
         });
 
         _socket.on('user.connect', function(userdata) {
@@ -272,6 +273,7 @@ $.extend(Mps.prototype, {
                 if (userdata.tags) {
                     user.tags = userdata.tags;
                     self.r.log.add('ID[' + userdata.socketId + '] さんのタグが修正されました。');
+                    self.refreshTagList();
                 }
                 if (userdata.imageName) {
                     user.imageName = userdata.imageName;
@@ -355,10 +357,10 @@ $.extend(Mps.prototype, {
         user.on('tags.init', function(value) {
             Mps.log('tags.init: ', value);
             if (this.private) {
-                refreshTags();
+                self.refreshTags(user);
             }
         }).on('user.update', function(userdata) {
-            refreshTagsFilter();
+            self.refreshTagsFilter();
         });
 
         user.private = true;
@@ -391,92 +393,6 @@ $.extend(Mps.prototype, {
             });
         });
 
-        // Tags
-        function addedTagCallback(tag) {
-            // update/delete時のサーバへの送信
-            self._socket.emit('user.update', {
-                socketId: user.socketId,
-                tags: user.tags,
-            });
-        }
-        function removedTagCallback(tag) {
-            self._socket.emit('user.update', {
-                socketId: user.socketId,
-                tags: user.tags,
-            });
-        }
-        function refreshTags() {
-            self.r.$tags.empty();
-            user.tags.forEach(function(tag) {
-                var $span = createTagEl(tag, function(e, tag) {
-                    var idx = user.tags.indexOf(tag);
-                    if (idx >= 0) {
-                        user.tags.splice(idx, 1);
-                        user.save();
-
-                        removedTagCallback(tag);
-                    }
-                });
-                $('<input type="hidden"/>').addClass('tag').text(tag).appendTo($span);
-            });
-            self.r.$tags.append(self.r.$tagsInput);
-
-            refreshTagList();
-        }
-        function refreshTagsFilter() {
-            self.r.$tagsFilter.empty();
-            self._tagsFilter.forEach(function(tag) {
-                var $span = createTagEl(tag, function(e, tag) {
-                    var idx = self._tagsFilter.indexOf(tag);
-                    if (idx >= 0) {
-                        self._tagsFilter.splice(idx, 1);
-                    }
-                    refreshTagsFilter();
-                });
-                self.r.$tagsFilter.append($span);
-            });
-            console.log('self._tagsFilter', self._tagsFilter);
-            refreshMaps();
-        }
-        // Mapの表示/非表示の切り替え
-        function refreshMaps() {
-            Mps.log('refreshMaps', 'tagsFilter', self._tagsFilter);
-            var isEmpty = (self._tagsFilter.length === 0);
-            self._users.forEach(function(user) {
-                if (isEmpty) {
-                    user.marker.isVisible = true;
-                } else {
-                    var isTagExists = false;
-                    user.tags.forEach(function(tag) {
-                        if (self._tagsFilter.indexOf(tag) >= 0) {
-                            isTagExists = true;
-                        }
-                    });
-                    Mps.log('refreshMaps', 'user:', user.socketId, 'isTagExists:', isTagExists);
-                    if (isTagExists) {
-                        user.marker.isVisible = true;
-                    } else {
-                        user.marker.isVisible = false;
-                    }
-                }
-            });
-        }
-        /**
-         * @param {String} tag
-         * @param {Function} removeCallback
-         * @return {jQuery} span element
-         */
-        function createTagEl(tag, removeCallback) {
-            var $span = $('<span/>').addClass('tag').appendTo(self.r.$tags);
-            $('<span/>').addClass('name').text(tag).appendTo($span);
-            $('<span/>').addClass('remove').text('×').appendTo($span)
-            .on('click', function(e) {
-                $span.remove();
-
-                removeCallback.call(this, e, tag);
-            });
-            return $span;
-        }
         this.r.$formTags.on('submit', function(e) {
             e.preventDefault();
 
@@ -485,30 +401,113 @@ $.extend(Mps.prototype, {
             if (user.tags.indexOf(tag) === -1) {
                 user.tags.push(tag);
                 user.save();
-                refreshTags();
+                self.refreshTags(user);
 
-                addedTagCallback(tag);
+                // addedtagcallback
+                // update/delete時のサーバへの送信
+                self._socket.emit('user.update', {
+                    socketId: user.socketId,
+                    tags: user.tags,
+                });
                 self.r.$tagsInput.focus();
             }
         });
+    },
+    refreshTags: function(user) {
+        var self = this;
+        this.r.$tags.empty();
+        user.tags.forEach(function(tag) {
+            var $span = self.createTagEl(tag, function(e, tag) {
+                var idx = user.tags.indexOf(tag);
+                if (idx >= 0) {
+                    user.tags.splice(idx, 1);
+                    user.save();
 
-        function refreshTagList() {
-            self.r.$formFilterMenu.empty();
-
-            self._users.forEach(function(user) {
-                user.tags.forEach(function(tag) {
-                    $('<li>').text(tag).click(onClickTag).appendTo(self.r.$formFilterMenu);
-                });
+                    // tag removed callback
+                    self._socket.emit('user.update', {
+                        socketId: user.socketId,
+                        tags: user.tags,
+                    });
+                }
             });
-        }
-        function onClickTag(e) {
-            var $this = $(this);
-            var tag = $this.text();
-            if (self._tagsFilter.indexOf(tag) === -1) {
-                self._tagsFilter.push(tag);
-                refreshTagsFilter();
+            $('<input type="hidden"/>').addClass('tag').text(tag).appendTo($span);
+        });
+        this.r.$tags.append(self.r.$tagsInput);
+
+        this.refreshTagList();
+    },
+    refreshTagsFilter: function() {
+        var self = this;
+        this.r.$tagsFilter.empty();
+        this._tagsFilter.forEach(function(tag) {
+            var $span = self.createTagEl(tag, function(e, tag) {
+                var idx = self._tagsFilter.indexOf(tag);
+                if (idx >= 0) {
+                    self._tagsFilter.splice(idx, 1);
+                }
+                self.refreshTagsFilter();
+            });
+            self.r.$tagsFilter.append($span);
+        });
+        console.log('self._tagsFilter', this._tagsFilter);
+        this.refreshMaps();
+    },
+    // Mapの表示/非表示の切り替え
+    refreshMaps: function() {
+        var self = this;
+        Mps.log('refreshMaps', 'tagsFilter', this._tagsFilter);
+        var isEmpty = (this._tagsFilter.length === 0);
+        this._users.forEach(function(user) {
+            if (isEmpty) {
+                user.marker.isVisible = true;
+            } else {
+                var isTagExists = false;
+                user.tags.forEach(function(tag) {
+                    if (self._tagsFilter.indexOf(tag) >= 0) {
+                        isTagExists = true;
+                    }
+                });
+                Mps.log('refreshMaps', 'user:', user.socketId, 'isTagExists:', isTagExists);
+                if (isTagExists) {
+                    user.marker.isVisible = true;
+                } else {
+                    user.marker.isVisible = false;
+                }
             }
-        }
+        });
+    },
+    /**
+     * @param {String} tag
+     * @param {Function} removeCallback
+     * @return {jQuery} span element
+     */
+    createTagEl: function(tag, removeCallback) {
+        var $span = $('<span/>').addClass('tag').appendTo(this.r.$tags);
+        $('<span/>').addClass('name').text(tag).appendTo($span);
+        $('<span/>').addClass('remove').text('×').appendTo($span)
+        .on('click', function(e) {
+            $span.remove();
+            removeCallback.call(this, e, tag);
+        });
+
+        return $span;
+    },
+    refreshTagList: function() {
+        var self = this;
+        this.r.$formFilterMenu.empty();
+
+        this._users.forEach(function(user) {
+            user.tags.forEach(function(tag) {
+                $('<li>').text(tag).click(function(e) {
+                    var $this = $(this);
+                    var tag = $this.text();
+                    if (self._tagsFilter.indexOf(tag) === -1) {
+                        self._tagsFilter.push(tag);
+                        self.refreshTagsFilter();
+                    }
+                }).appendTo(self.r.$formFilterMenu);
+            });
+        });
     },
     getUserBySocketId: function(socketId) {
         var user = null;
