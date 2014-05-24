@@ -59,25 +59,33 @@ exports.upload = function(req, res) {
     }
     var image = req.files.image;
     console.log('image:', image);
-    fs.readFile(image.path, function (err, data) {
+    fs.mkdir(uploadDir, 0755, function(err) {
         if (err) {
             console.log('readFile', err);
             json(res).err(String(err), 500);
             return;
         }
-        var ext = path.extname(image.originalFilename);
-        var newFileName = createSHA1(Date.now() + image.originalFilename) + ext;
-        var newFilePath = uploadDir + '/' + newFileName;
-        fs.writeFile(newFilePath, data, function (err) {
+
+        fs.readFile(image.path, function (err, data) {
             if (err) {
-                console.log('writeFile', err);
+                console.log('readFile', err);
                 json(res).err(String(err), 500);
                 return;
             }
+            var ext = path.extname(image.originalFilename);
+            var newFileName = createSHA1(Date.now() + image.originalFilename) + ext;
+            var newFilePath = uploadDir + '/' + newFileName;
+            fs.writeFile(newFilePath, data, function (err) {
+                if (err) {
+                    console.log('writeFile', err);
+                    json(res).err(String(err), 500);
+                    return;
+                }
 
-            json(res).ok({
-                name: newFileName,
-                originalFilename: image.originalFilename,
+                json(res).ok({
+                    name: newFileName,
+                    originalFilename: image.originalFilename,
+                });
             });
         });
     });
