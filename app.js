@@ -145,16 +145,21 @@ io.sockets.on('connection', function(socket) {
         var from = userdata.from;
         var to = userdata.to;
 
-        io.sockets.socket(to.socketId).emit('user.chat', {
+        var base = {
             to: {
-                socketId: to.socketId,
                 text: to.text,
             },
             from: {
                 socketId: from.socketId,
                 username: from.username,
             },
-        });
+        };
+        if (to.socketId) {
+            base.to.socketId = to.socketId;
+            io.sockets.socket(to.socketId).emit('user.chat', base);
+        } else {
+            io.sockets.emit('user.chat', base);
+        }
     });
 
 

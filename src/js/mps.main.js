@@ -148,6 +148,9 @@ $.extend(Mps.prototype, {
             });
             if (idx >= 0) {
                 user.destroy();
+                if (user.socketId === _socket.socket.transport.sessid) {
+                    self._user = null;
+                }
                 self._users.splice(idx, 1);
             }
         }
@@ -293,15 +296,13 @@ $.extend(Mps.prototype, {
         this.r.$formChat.submit(function(e) {
             e.preventDefault();
 
-            // TODO
-            var id = window.t;
             var val = self.r.$chatInput.val();
             self.r.$chatInput.focus().val('');
 
             if (self._user) {
                 self._socket.emit('user.chat', {
                     to: {
-                        socketId: id,
+                        //socketId: id,
                         text: val,
                     },
                     from: {
@@ -314,7 +315,7 @@ $.extend(Mps.prototype, {
         _socket.on('user.chat', function(chat) {
             Mps.log('user.chat', arguments);
 
-            var user = self.getUserBySocketId(from.socketId);
+            var user = self.getUserBySocketId(chat.from.socketId);
             var username;
             if (user) {
                 if (user.username) {
