@@ -16,6 +16,7 @@ Mps.User = (function() {
             this._super.apply(this, arguments);
             this._tags = [];
             this._username = null;
+            this._imageName = null;
             var self = this;
             self._latlng = null;
             self._marker = null;
@@ -66,9 +67,14 @@ Mps.User = (function() {
                         return self._private;
                     }
                 },
-                "image": {
-                    value: null,
-                    writable: true
+                "imageName": {
+                    set: function(newValue) {
+                        self._imageName = newValue;
+                        self.setIcon(newValue);
+                    },
+                    get: function() {
+                        return self._imageName;
+                    }
                 },
             });
             Object.defineProperties(this.marker, {
@@ -125,6 +131,9 @@ Mps.User = (function() {
             if (userdata.tags) {
                 this._tags = userdata.tags;
             }
+            if (userdata._imageName) {
+                this._imageName = userdata._imageName;
+            }
         },
         setIcon: function(imageName) {
             var self = this;
@@ -140,13 +149,14 @@ Mps.User = (function() {
             }
         },
         destroy: function() {
-            var marker = self._marker;
+            var marker = this._marker;
             if (marker) {
                 marker.setMap(null);
             }
             if (this.infoWindow) {
                 this.infoWindow.close();
             }
+            Mps.log('user destroy:', this.toUserdata());
         },
         save: function() {
             var json = JSON.stringify({
@@ -164,6 +174,7 @@ Mps.User = (function() {
                 'username': this.username,
                 'socketId': this.socketId,
                 'marker': this.marker.latlng,
+                'imageName': this._imageName,
                 'tags': this._tags,
             };
         },

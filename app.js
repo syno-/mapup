@@ -105,7 +105,7 @@ io.sockets.on('connection', function(socket) {
     socket.emit('user.list', clients);
 
     socket.on('disconnect', function() {
-        console.log('user.disconnect');
+        console.log('user.disconnect', arguments);
         io.sockets.emit('user.disconnect', {
             id: socket.id
         });
@@ -121,7 +121,7 @@ io.sockets.on('connection', function(socket) {
      * }
      */
     socket.on('user.connect', function(userdata) {
-        console.log('user.connect, latlng=', userdata.marker);
+        console.log('user.connect, userdata=', userdata);
 
         setData(userdata, function() {
             io.sockets.emit('user.connect', userdata);
@@ -135,7 +135,7 @@ io.sockets.on('connection', function(socket) {
                 socketId: socket.id,
                 marker: userdata.marker,
                 username: userdata.username,
-                image: userdata.image,
+                imageName: userdata.imageName,
                 tags: userdata.tags,
             });
         });
@@ -144,7 +144,7 @@ io.sockets.on('connection', function(socket) {
     function setData(userdata, cb) {
         var progress = 0;
         var maxProgress = 0;
-        ['username', 'marker', 'tags', 'image'].forEach(function(prop, i) {
+        ['username', 'marker', 'tags', 'imageName'].forEach(function(prop, i) {
             if (userdata[prop] !== undefined) {
                 maxProgress++;
                 socket.set(prop, userdata[prop], function () {

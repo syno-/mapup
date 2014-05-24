@@ -1,4 +1,5 @@
 var extend = require('node.extend');
+var mkdirp = require('mkdirp');
 var fs = require('fs');
 var path = require('path');
 var crypto = require('crypto');
@@ -59,7 +60,7 @@ exports.upload = function(req, res) {
     }
     var image = req.files.image;
     console.log('image:', image);
-    fs.mkdir(uploadDir, 0755, function(err) {
+    mkdirp(uploadDir, function(err) {
         if (err) {
             console.log('readFile', err);
             json(res).err(String(err), 500);

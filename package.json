@@ -9,6 +9,7 @@
     "colors": "*",
     "express": "3.4.8",
     "hjs": "*",
+    "mkdirp": "^0.5.0",
     "node-uuid": "~1.4.1",
     "node.extend": "^1.0.10",
     "socket.io": "*",

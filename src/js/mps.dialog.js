@@ -110,6 +110,7 @@ Mps.Dialog = (function() {
                 });
                 this.$ok = $('#photo-ok').click(function(e) {
                     self.emit('ok', [e, self.$video.width(), self.$video.height()]);
+                    self.stopVideo();
                     self._$.modal('hide');
                 });
                 this.$video = $('#photo-video');

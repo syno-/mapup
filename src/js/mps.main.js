@@ -83,6 +83,10 @@ $.extend(Mps.prototype, {
                 if (self._user) {
                     Mps.log('self._user', data);
                     self._user.setIcon(data.name);
+                    self._socket.emit('user.update', {
+                        socketId: self._user.socketId,
+                        imageName: data.name
+                    });
                 } else {
                     Mps.log('自分がまだマップ上に無い。ネットワークの状態が悪い？');
                 }
@@ -235,16 +239,15 @@ $.extend(Mps.prototype, {
             addUser(userdata);
         });
         _socket.on('user.disconnect', function(connection) {
-            console.log('user.disconnect', arguments);
+            console.log('user.disconnect', connection.id, self._users);
             self.r.log.add('ID[' + connection.id + '] さんが切断しました。');
 
             // delete user
             self._users.forEach(function(user_, i) {
-                if (user_.socketId !== connection.id) {
-                    return true;
+                if (user_.socketId === connection.id) {
+                    removeUser(user_);
+                    return false;
                 }
-                removeUser(user_);
-                return false;
             });
         });
 
@@ -265,8 +268,8 @@ $.extend(Mps.prototype, {
                     user.tags = userdata.tags;
                     self.r.log.add('ID[' + userdata.socketId + '] さんのタグが修正されました。');
                 }
-                if (userdata.image) {
-                    user.image = userdata.image;
+                if (userdata.imageName) {
+                    user.imageName = userdata.imageName;
                     self.r.log.add('ID[' + userdata.socketId + '] さんの画像が修正されました。');
                 }
 
