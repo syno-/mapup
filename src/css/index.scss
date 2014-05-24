@@ -80,7 +80,7 @@ body {
         top: auto;
         right: auto;
         left: 0;
-        bottom: 0;
+        bottom: 24px;
         width: 50%;
 
         height: 100px;
@@ -92,6 +92,28 @@ body {
 
         p {
             margin: 0;
+        }
+    }
+
+    #chat {
+        position: fixed;
+        top: auto;
+        right: auto;
+        left: 0;
+        bottom: 0;
+        width: 50%;
+
+        margin: 0;
+        padding: 0;
+        height: 30px;
+        font-size: 0.8em;
+        overflow-y: hidden;
+        overflow-x: hidden;
+
+        #chat-input {
+            width: 100%;
+            height: 24px;
+            color: #000;
         }
     }
 

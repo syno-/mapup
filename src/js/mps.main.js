@@ -15,6 +15,8 @@ $.extend(Mps.prototype, {
             $formFilterMenu: $('#form-filter .dropdown-menu'),
             $tags: $('#tags'),
             $tagsInput: $('#tags input[name="tags"]'),
+            $formChat: $('#form-chat'),
+            $chatInput: $('#chat-input'),
             $formTags: $('#form-tags'),
             //$log: $('#log'),
             log: new Mps.Log('log', {
@@ -287,6 +289,43 @@ $.extend(Mps.prototype, {
             Mps.log('');
 
             setMenuShown(!self.r.$menuContents.is(':visible'));
+        });
+        this.r.$formChat.submit(function(e) {
+            e.preventDefault();
+
+            // TODO
+            var id = window.t;
+            var val = self.r.$chatInput.val();
+            self.r.$chatInput.focus().val('');
+
+            if (self._user) {
+                self._socket.emit('user.chat', {
+                    to: {
+                        socketId: id,
+                        text: val,
+                    },
+                    from: {
+                        socketId: self._user.socketId,
+                        username: self._user.username,
+                    },
+                });
+            }
+        });
+        _socket.on('user.chat', function(chat) {
+            Mps.log('user.chat', arguments);
+
+            var user = self.getUserBySocketId(from.socketId);
+            var username;
+            if (user) {
+                if (user.username) {
+                    username = user.username;
+                } else {
+                    username = user.socketId;
+                }
+            } else {
+                username = '(???)';
+            }
+            self.r.log.add('[' + username + ']: ' + chat.to.text);
         });
 
         setMenuShown(true);

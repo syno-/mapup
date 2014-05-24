@@ -140,6 +140,23 @@ io.sockets.on('connection', function(socket) {
             });
         });
     });
+    socket.on('user.chat', function(userdata) {
+        console.log('user.chat', userdata);
+        var from = userdata.from;
+        var to = userdata.to;
+
+        io.sockets.socket(to.socketId).emit('user.chat', {
+            to: {
+                socketId: to.socketId,
+                text: to.text,
+            },
+            from: {
+                socketId: from.socketId,
+                username: from.username,
+            },
+        });
+    });
+
 
     function setData(userdata, cb) {
         var progress = 0;
