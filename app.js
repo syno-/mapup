@@ -8,6 +8,10 @@ var routes = require('./routes');
 var user = require('./routes/user');
 var http = require('http');
 var path = require('path');
+var mod = {
+    image: require('./image.upload'),
+};
+
 require('colors');
 
 var app = module.exports = express();
@@ -20,9 +24,14 @@ app.use(express.favicon());
 app.use(express.logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded());
+app.use(express.multipart());
 app.use(express.methodOverride());
 app.use(app.router);
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.bodyParser({
+    keepExtensions: true,
+    uploadDir: mod.image.uploadDir
+}));
 
 // development only
 if ('development' == app.get('env')) {
@@ -36,10 +45,19 @@ app.get('/room', function(req, res) {
         title: 'meetup',
     });
 });
+/**
+ * タグ一覧の取得API
+ */
 app.get('/tags', function(req, res) {
     var clients = getClients(io.sockets.sockets);
 
     res.end(JSON.stringify(clients));
+});
+app.post('/image', function(req, res) {
+    mod.image.upload.apply(this, arguments);
+});
+app.get('/image', function(req, res) {
+    mod.image.receive.apply(this, arguments);
 });
 
 var server = http.createServer(app);
@@ -53,6 +71,9 @@ var socketIO = require('socket.io');
 var io = module.exports = socketIO.listen(server);
 var signalmaster = require('./signalmaster');
 
+/**
+ * クライアントのデータ一覧を取得
+ */
 function getClients(roomClients) {
     var r = [];
     if (roomClients) {
@@ -114,6 +135,7 @@ io.sockets.on('connection', function(socket) {
                 socketId: socket.id,
                 marker: userdata.marker,
                 username: userdata.username,
+                image: userdata.image,
                 tags: userdata.tags,
             });
         });
@@ -122,7 +144,7 @@ io.sockets.on('connection', function(socket) {
     function setData(userdata, cb) {
         var progress = 0;
         var maxProgress = 0;
-        ['username', 'marker', 'tags'].forEach(function(prop, i) {
+        ['username', 'marker', 'tags', 'image'].forEach(function(prop, i) {
             if (userdata[prop] !== undefined) {
                 maxProgress++;
                 socket.set(prop, userdata[prop], function () {

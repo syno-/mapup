@@ -6,12 +6,13 @@
     "start": "node app.js"
   },
   "dependencies": {
-    "express": "3.4.8",
-    "socket.io": "*",
     "colors": "*",
+    "express": "3.4.8",
     "hjs": "*",
-    "yetify": "~0.1.0",
-    "node-uuid": "~1.4.1"
+    "node-uuid": "~1.4.1",
+    "node.extend": "^1.0.10",
+    "socket.io": "*",
+    "yetify": "~0.1.0"
   },
   "devDependencies": {
     "grunt": "~0.4.1",

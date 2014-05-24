@@ -66,6 +66,10 @@ Mps.User = (function() {
                         return self._private;
                     }
                 },
+                "image": {
+                    value: null,
+                    writable: true
+                },
             });
             Object.defineProperties(this.marker, {
                 "latlng": {
@@ -120,6 +124,19 @@ Mps.User = (function() {
             }
             if (userdata.tags) {
                 this._tags = userdata.tags;
+            }
+        },
+        setIcon: function(imageName) {
+            var self = this;
+            if (self._marker) {
+                var m = self._marker;
+                var url = location.origin + '/image?filename=' + imageName;
+                Mps.log('pin url=', url);
+                m.setIcon({
+                    size: new google.maps.Size(64, 48),
+                    // http://localhost/image?filename=<hash>.jpg
+                    url: url
+                });
             }
         },
         destroy: function() {

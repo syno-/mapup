@@ -38,11 +38,6 @@ $.extend(Mps.prototype, {
         this.initMaps();
         this.initSocketio();
         this.initFinished();
-
-        this.r.dlgPhoto.on('ok', function(e, w, h) {
-            this.capture(self.r.photoContext, self.r.$photo.width(), self.r.$photo.height());
-        });
-        this.r.dlgPhoto.show();
     },
     initMaps: function() {
         this._map = new google.maps.Map(this.r.$map[0], {
@@ -75,6 +70,27 @@ $.extend(Mps.prototype, {
         //}).always(function(e) {
         //    self.r.spin.hide();
         //});
+
+        this.r.dlgPhoto.on('ok', function(e, w, h) {
+            this.capture(self.r.photoContext, self.r.$photo.width(), self.r.$photo.height());
+            var url = this.toDataURL(64, 48);
+            Mps.log('photo image url=', url);
+
+            // send image
+            Mps.net.reqSendMarkerImage(url).done(function(data) {
+                Mps.log('reqSendMarkerImage', data);
+                // TODO: ピン立て
+                if (self._user) {
+                    Mps.log('self._user', data);
+                    self._user.setIcon(data.name);
+                } else {
+                    Mps.log('自分がまだマップ上に無い。ネットワークの状態が悪い？');
+                }
+            }).fail(function(e) {
+                Mps.log('reqSendMarkerImage, fail', e);
+            });
+        });
+        this.r.dlgPhoto.show();
 
         function addUser(userdata) {
             Mps.log('addUser, userdata=', userdata);
@@ -248,6 +264,10 @@ $.extend(Mps.prototype, {
                 if (userdata.tags) {
                     user.tags = userdata.tags;
                     self.r.log.add('ID[' + userdata.socketId + '] さんのタグが修正されました。');
+                }
+                if (userdata.image) {
+                    user.image = userdata.image;
+                    self.r.log.add('ID[' + userdata.socketId + '] さんの画像が修正されました。');
                 }
 
                 if (self._user === user) {

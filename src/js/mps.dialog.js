@@ -95,9 +95,11 @@ Mps.Dialog = (function() {
             init: function(dlgId) {
                 this._super.apply(this, arguments);
                 this.initBootstrap();
+                this._maxWidth = 640;
+                this._maxHeight = 480;
                 var self = this;
-                this._$.on('hide.bs.modal', function(e) {
-                });
+                //this._$.on('hide.bs.modal', function(e) {
+                //});
                 var $dlg = this._$.find('.modal-dialog');
                 var $body = this._$.find('.modal-body');
                 this.$start = $('#photo-start').click(function(e) {
@@ -110,14 +112,10 @@ Mps.Dialog = (function() {
                     self.emit('ok', [e, self.$video.width(), self.$video.height()]);
                     self._$.modal('hide');
                 });
-                this.$video = $('#photo-video').resize(function(e) {
-                    var $this = $(this);
-                    var padding = parseInt($body.css('padding'), 10);
-                    $dlg.css({
-                        'width': ($this.width() + padding * 2) + 'px',
-                        //'height': $this.height(),
-                        //'margin-left': (-$this.width() / 2) + 'px',
-                    });
+                this.$video = $('#photo-video');
+                var padding = parseInt($body.css('padding-left'), 10);
+                $dlg.css({
+                    width: (this._maxWidth + padding * 2) + 'px'
                 });
 
                 self.startVideo();
@@ -126,21 +124,34 @@ Mps.Dialog = (function() {
                 var self = this;
                 if (!self.stream) {
                     Mps.getUserMedia({
-                        video: true,
-                        audio: false
+                        // http://tools.ietf.org/html/draft-alvestrand-constraints-resolution-00#page-4
+                        video: {
+                            mandatory: {
+                                maxWidth: this._maxWidth,
+                                maxHeight: this._maxHeight
+                            },
+                        },
+                        audio: false, 
                     }, function(stream) {
                         self.stream = stream;
                         var url = window.URL.createObjectURL(self.stream);
                         self.$video.attr('src', url);
                     }, function(error) {
+                        // TODO: エラーを通知する
                         console.error("getUserMedia error: ", error.code);
                     });
                 }
             },
             capture: function(canvasContext, width, height) {
-                console.log(canvasContext, width, height);
+                //console.log(canvasContext, width, height);
                 canvasContext.drawImage(this.$video[0], 0, 0, width, height);
-                //context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            },
+            toDataURL: function(w, h) {
+                var $c = $('<canvas/>').attr('width', w).attr('height', h);
+                var context = $c[0].getContext('2d');
+                context.drawImage(this.$video[0], 0, 0, w, h);
+                var url = $c[0].toDataURL();
+                return url;
             },
             stopVideo: function() {
                 var self = this;

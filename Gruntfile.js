@@ -14,6 +14,7 @@ module.exports = function(grunt) {
                     min: 'mps.min.js',
                     files: [
                         'mps.begin.js',
+                        'mps.net.js',
                         'mps.eventobserver.js',
                         'mps.log.js',
                         'mps.dialog.js',

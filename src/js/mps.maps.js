@@ -13,6 +13,7 @@ Mps.Maps = (function() {
         var r = [];
         colors.forEach(function(color) {
             var url = 'http://www.google.com/intl/en_us/mapfiles/ms/micons/' + color + '-dot.png';
+            //var url = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAwCAYAAAChS3wfAAAcS0lEQ…OgDOVjNjyatxcPlWii/Hk0rwwne+VyZ5HmHKHUZrP1PwEC8IkVnhqVkAAAAABJRU5ErkJggg=';
             var image = new google.maps.MarkerImage(
                 url,
                 new google.maps.Size(32, 32),
@@ -34,7 +35,7 @@ Mps.Maps = (function() {
 
             this._icons = createIconImages(['red']);
             this._iconShadow = new google.maps.MarkerImage(
-                'http://maps.google.com/mapfiles/ms/micons/msmarker.shadow.png',
+                //'http://maps.google.com/mapfiles/ms/micons/msmarker.shadow.png',
                 new google.maps.Size(59, 32),
                 new google.maps.Point(0,0),
                 new google.maps.Point(16, 32)
