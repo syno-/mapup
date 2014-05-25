@@ -155,26 +155,6 @@ $.extend(Mps.prototype, {
             }
         }
 
-        function createInfoWindowMessage(user) {
-            var $root = $('<div/>').addClass('infowindow');
-            if (user.username) {
-                $('<p>').text(user.username).appendTo($root);
-            }
-            if (user.tags) {
-                var msg;
-                if (user.tags.length > 0) {
-                    msg = 'タグ: ' + user.tags.join(',');
-                } else {
-                    msg = 'タグ: (なし)';
-                }
-                $('<p>').text(msg).appendTo($root);
-            }
-
-            var html = $root[0].outerHTML;
-            //console.log('html', html);
-            return html;
-        }
-
         function createUser(userdata) {
             var user = new Mps.User(userdata).on('marker.click', function(e) {
                 //self._map.setZoom(12);
@@ -189,9 +169,13 @@ $.extend(Mps.prototype, {
                     //infoWindow.close();
                     //infoWindow = null;
                 }
-                user.infoWindow.setContent(createInfoWindowMessage(user));
-
+                user.infoWindow.setContent(Mps.Maps.createInfoWindowMessage(user));
                 user.infoWindow.open(self._map, this.marker.ref);
+
+                var invite = self.r.$map.find('.invite').click(function(e) {
+                    Mps.log('invite!!click ', this);
+                });
+                Mps.log('invite', invite );
             }).on('marker.dragend', function(e) {
                 Mps.log('marker dragged', e);
 
@@ -295,6 +279,15 @@ $.extend(Mps.prototype, {
 
             setMenuShown(!self.r.$menuContents.is(':visible'));
         });
+
+        Mps.Maps.inviteVideoCallback = function(btnEl, socketId) {
+            var user = self.getUserBySocketId(socketId);
+            if (user && self._user) {
+                Mps.log('inviteVideoCallback, user=', user);
+                Mps.Dialog('rtc').setSelf(self._user).addUser(user).begin().show();
+            }
+        };
+
         this.r.$formChat.submit(function(e) {
             e.preventDefault();
 

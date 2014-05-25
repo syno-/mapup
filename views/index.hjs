@@ -17,6 +17,7 @@
         <!--
         <script type="text/javascript" src="/libs/js/typeahead.bundle.min.js"></script>
         -->
+        <script type="text/javascript" src="/libs/SimpleWebRTC/simplewebrtc.bundle.js"></script>
         <script type="text/javascript" src="/socket.io/socket.io.js"></script>
         <script type="text/javascript" src="/js/mps.js"></script>
     </head>
@@ -69,7 +70,7 @@
             </form>
         </div>
 
-        <!-- Dialog -->
+        <!-- Snap dialog -->
         <div  class="modal fade" id="dlg-photo" tabindex="-1" role="dialog" aria-labelledby="take-a-photo" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -86,6 +87,33 @@
                         <button type="button" id="photo-start" class="btn btn-danger">Snap</button>
                         <button type="button" id="photo-onemore" class="btn btn-primary">One more</button>
                         <button type="button" id="photo-ok" class="btn btn-danger">OK</button>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!-- /.modal -->
+
+        <!-- RTC dialog -->
+        <div class="modal fade" id="rtc" tabindex="-1" role="dialog" aria-labelledby="take-a-photo" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                        <h4 id="rtc-title" class="modal-title"></h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="rtc-table">
+                            <div class="rtc-table-cell">
+                                <div id="remoteVideos"></div>
+                                <div>
+                                    <button class="btn btn-default" id="rtc-btn-mute"></button>
+                                    <button class="btn btn-default" id="rtc-btn-video"></button>
+                                </div>
+                            </div>
+                            <div class="rtc-table-cell">
+                                <video id="localVideo"></video>
+                                <p id="rtc-self-username"></p>
+                            </div>
+                        </div>
                     </div>
                 </div><!-- /.modal-content -->
             </div><!-- /.modal-dialog -->

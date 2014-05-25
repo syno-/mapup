@@ -7,13 +7,11 @@
 Mps.Maps = (function() {
     "use strict";
 
-    var instance;
-
     function createIconImages(colors) {
         var r = [];
         colors.forEach(function(color) {
             var url = 'http://www.google.com/intl/en_us/mapfiles/ms/micons/' + color + '-dot.png';
-            //var url = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAwCAYAAAChS3wfAAAcS0lEQ…OgDOVjNjyatxcPlWii/Hk0rwwne+VyZ5HmHKHUZrP1PwEC8IkVnhqVkAAAAABJRU5ErkJggg=';
+            //var url = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAwCAYAAAChS3wfAAAcS0lEQ窶ｦOgDOVjNjyatxcPlWii/Hk0rwwne+VyZ5HmHKHUZrP1PwEC8IkVnhqVkAAAAABJRU5ErkJggg=';
             var image = new google.maps.MarkerImage(
                 url,
                 new google.maps.Size(32, 32),
@@ -48,6 +46,47 @@ Mps.Maps = (function() {
             };
         },
     });
+
+    // statics
+    $.extend(Maps, {
+        createInfoWindowMessage: function(user) {
+            var $root = $('<div/>').addClass('infowindow');
+            if (user.username) {
+                $('<p>').text(user.username).appendTo($root);
+            }
+            if (user.tags) {
+                var msg;
+                if (user.tags.length > 0) {
+                    msg = 'タグ: ' + user.tags.join(',');
+                } else {
+                    msg = 'タグ: (なし)';
+                }
+                $('<p>').text(msg).appendTo($root);
+            }
+            if (!user.private) {
+                $('<button>').attr('type', 'button')
+                .addClass('btn btn-danger')
+                .text('ビデオチャットに招待する')
+                .attr('onclick', 'onClickInviteVideoOnInfoWindow(this, "' + user.socketId + '")')
+                .appendTo($root);
+                //var rtc = Mps.Dialog('rtc');
+                //rtc.setSelf(user);
+                //rtc.addUser(user);
+                //rtc.show();
+            }
+
+            var html = $root[0].outerHTML;
+            //console.log('html', html);
+            return html;
+        },
+        inviteVideoCallback: null,
+    });
+    window.onClickInviteVideoOnInfoWindow = function(btnEl, socketId) {
+        console.log('onMapInfoWindow');
+        if (Maps.inviteVideoCallback) {
+            Maps.inviteVideoCallback(btnEl, socketId);
+        }
+    };
 
     //function createMarker(map, latlng, label, html, color) {
     //    var contentString = '<b>'+label+'</b><br>'+html;

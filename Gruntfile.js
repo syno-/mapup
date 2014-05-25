@@ -16,6 +16,8 @@ module.exports = function(grunt) {
                         'mps.begin.js',
                         'mps.net.js',
                         'mps.eventobserver.js',
+                        'mps.maps.js',
+                        'mps.rtc.js',
                         'mps.log.js',
                         'mps.dialog.js',
                         'mps.geolocation.js',
@@ -31,6 +33,14 @@ module.exports = function(grunt) {
                     //min: 'meetup.min.js',
                     files: [
                         'meetup.main.js',
+                    ]
+                },
+            },
+            simplewebrtc: {
+                js: {
+                    out: 'SimpleWebRTC/',
+                    files: [
+                        'simplewebrtc.bundle.js',
                     ]
                 },
             },
@@ -73,12 +83,6 @@ module.exports = function(grunt) {
                 })(),
                 dest: path.release.js + path.src.meetup.js.out,
             },
-            signalmaster: {
-                src: [
-                    path.src.js + 'signalmaster.main.js',
-                ],
-                dest: 'signalmaster.js'
-            },
         },
         uglify: {
 //            build: {
@@ -120,7 +124,14 @@ module.exports = function(grunt) {
                     dest: 'public/libs/meetup.js/',
                     filter: 'isFile'
                 }]
-            }
+            },
+            simplewebrtc: {
+                files: [{
+                    src: ['SimpleWebRTC/simplewebrtc.bundle.js'],
+                    dest: 'public/libs/',
+                    filter: 'isFile'
+                }]
+            },
         },
         watch: {
             scripts: {
@@ -166,6 +177,7 @@ module.exports = function(grunt) {
                        'concat',
                        //'uglify',
                        'copy:meetupjs',
+                       'copy:simplewebrtc',
     ]);
     grunt.registerTask('release', [
                        'jshint',
@@ -173,5 +185,6 @@ module.exports = function(grunt) {
                        //'uglify',
                        'sass',
                        'copy:meetupjs',
+                       'copy:simplewebrtc',
     ]);
 };

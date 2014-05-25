@@ -117,6 +117,41 @@ body {
         }
     }
 
+    #rtc {
+
+        .modal-dialog {
+            width: 90%;
+        }
+
+        .modal-body {
+            padding: 0;
+        }
+
+        .rtc-table {
+            display: table;
+            width: 100%;
+
+            .rtc-table-cell:first-child {
+                display: table-cell;
+                padding: 20px;
+
+                #remoteVideos {
+                    width: 680px;
+                }
+            }
+            .rtc-table-cell:last-child {
+                display: table-cell;
+                padding: 20px;
+                width: 340px;
+                border-left: 1px solid #E5E5E5;
+
+                #localVideo {
+                    border: 1px solid #E5E5E5;
+                }
+            }
+        }
+    }
+
     .dropdown-menu {
         color: #000;
         text-align: left;

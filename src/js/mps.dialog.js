@@ -44,6 +44,19 @@ Mps.Dialog = (function() {
         },
     });
 
+    var BootstrapDialogProto = DialogProto.extend({
+        init: function(dlgId) {
+            this._super.apply(this, arguments);
+            this._$ = $('#' + this._dlgId);
+        },
+        show: function() {
+            this._$.modal();
+        },
+        modal: function() {
+            this._$.modal.apply(this._$, arguments);
+        },
+    });
+
     var dialogs = {
         /**
          * 非同期プログレスを出すダイアログです。
@@ -91,10 +104,9 @@ Mps.Dialog = (function() {
                 this.hide();
             }
         }),
-        'dlg-photo': DialogProto.extend({
+        'dlg-photo': BootstrapDialogProto.extend({
             init: function(dlgId) {
                 this._super.apply(this, arguments);
-                this.initBootstrap();
                 this._maxWidth = 640;
                 this._maxHeight = 480;
                 var self = this;
@@ -121,10 +133,13 @@ Mps.Dialog = (function() {
 
                 self.startVideo();
             },
+            isVisible: function() {
+                return this._$.is(':visible');
+            },
             startVideo: function() {
                 var self = this;
                 if (!self.stream) {
-                    Mps.getUserMedia({
+                    var userMedia = Mps.getUserMedia({
                         // http://tools.ietf.org/html/draft-alvestrand-constraints-resolution-00#page-4
                         video: {
                             mandatory: {
@@ -134,13 +149,19 @@ Mps.Dialog = (function() {
                         },
                         audio: false, 
                     }, function(stream) {
-                        self.stream = stream;
-                        var url = window.URL.createObjectURL(self.stream);
-                        self.$video.attr('src', url);
+                        if (self.isVisible()) {
+                            self.stream = stream;
+                            var url = window.URL.createObjectURL(self.stream);
+                            self.$video.attr('src', url);
+                        } else {
+                            stream.stop();
+                            stream = null;
+                        }
                     }, function(error) {
                         // TODO: エラーを通知する
                         console.error("getUserMedia error: ", error.code);
                     });
+                    Mps.log('userMedia', userMedia);
                 }
             },
             capture: function(canvasContext, width, height) {
@@ -161,8 +182,111 @@ Mps.Dialog = (function() {
                     self.stream = null;
                 }
             },
-            show: function() {
-                this._$.modal();
+        }),
+        'rtc': BootstrapDialogProto.extend({
+            init: function(dlgId) {
+                this._super.apply(this, arguments);
+                this._users = [];
+
+                this.$title = this._$.find('#rtc-title');
+                this.$selfUsername = this._$.find('#rtc-self-username');
+                this.$btnMute = this._$.find('#rtc-btn-mute');
+                this.$btnVideo = this._$.find('#rtc-btn-video');
+                //this._$.on('', function(e) {
+                //});
+            },
+            /** レイアウト作るためのやつ。消す。 */
+            test: function() {
+                this.$title.text('タイトル');
+                this.$selfUsername.text('ほげほげ');
+                this.$btnMute.text('Mute');
+                this.$btnVideo.text('stopVideo');
+
+                return this;
+            },
+            setSelf: function(user) {
+                this.$selfUsername.text(user.displayUsername());
+
+                return this;
+            },
+            addUser: function(user) {
+                this._users.push(user);
+                this.$title.text(user.displayUsername());
+
+                return this;
+            },
+            begin: function() {
+                this.initSimpleWebRTC();
+
+                return this;
+            },
+            end: function() {
+            },
+            removeUser: function(user) {
+                // TODO
+            },
+            initSimpleWebRTC: function() {
+                if (this._webrtc) {
+                    return;
+                }
+                var webrtc = this._webrtc = new SimpleWebRTC({
+                    //url: 'http://syno.in:8887',
+                    url: location.origin,
+                    localVideoEl: 'localVideo',
+                    remoteVideosEl: 'remoteVideos',
+                    autoRequestMedia: true,
+                    media: {
+                        video: {
+                            mandatory: {
+                                maxWidth: 320,
+                                maxHeight: 240,
+                                maxFrameRate: 8
+                            }
+                        },
+                        audio: false
+                    },
+                });
+                webrtc.on('readyToCall', function () {
+                    // TODO
+                    webrtc.joinRoom('your awesome room name');
+                });
+                webrtc.on('joinedRoom', function () {
+                    webrtc.sendDirectlyToAll("text chat", "chat", ""); // omajinai
+                });
+                webrtc.on('channelMessage', function (peer, label, data, ch, ev) {
+                    if (label == 'text chat' && data.type == 'chat') {
+                        document.getElementById("chatLog").innerHTML += data.payload;
+                    }
+                });
+
+                // 
+                this.$btnMute.text('Mute');
+                //webrtc.on('audioOff', function (event) {
+                //});
+                //webrtc.on('audioOn', function (event) {
+                //});
+
+                // 
+                this.$btnVideo.text('stopVideo');
+                //webrtc.on('videoOff', function (event) {
+                //});
+                //webrtc.on('videoOn', function (event) {
+                //});
+            },
+            /**
+             * @param {HTMLElement} _text
+             */
+            sendChat: function(_text) {
+                var context = document.getElementById("snap").getContext("2d");
+                context.beginPath();
+                context.rect(15, 0, 90, 90);
+                context.clip();
+                context.drawImage(document.getElementById("localVideo"),0, 0, 120, 90);
+                var snap = document.getElementById("snap").toDataURL();
+                var html = '<div class=chatText><img width="60" src="' + snap + '">' + _text.value + '</div>';
+                this._webrtc.sendDirectlyToAll("text chat", "chat", html);
+                document.getElementById("chatLog").innerHTML += html;
+                _text.value = '';
             },
         }),
         disconnected: DialogProto.extend({

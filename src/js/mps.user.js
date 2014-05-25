@@ -169,6 +169,15 @@ Mps.User = (function() {
             localStorage.setItem('mps.user.myself', json);
             Mps.log('Saved myself: json=', json);
         },
+        displayUsername: function() {
+            var name;
+            if (this.username) {
+                name = this.username;
+            } else {
+                name = this.socketId;
+            }
+            return name;
+        },
         toUserdata: function() {
             return {
                 'username': this.username,
