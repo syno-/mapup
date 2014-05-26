@@ -133,14 +133,37 @@ body {
 
             .rtc-table-cell:first-child {
                 display: table-cell;
-                padding: 20px;
 
-                #remoteVideos {
-                    width: 680px;
+                .rtc-videos {
+                    width: 100%;
+                    padding: 20px;
+                    padding-bottom: 0;
+                    background-color: #000;
+
+                    #remoteVideos {
+                        min-height: 360px;
+                    }
+                    .rtc-controller {
+                        padding: 20px 0;
+                        border-top: 1px solid #333;
+                    }
+                }
+                .rtc-chat {
+                    width: 100%;
+
+                    #rtc-chat-log {
+                        height: 100px;
+                        padding: 20px;
+                    }
+
+                    input {
+                        width: 100%;
+                    }
                 }
             }
             .rtc-table-cell:last-child {
                 display: table-cell;
+                vertical-align: top;
                 padding: 20px;
                 width: 340px;
                 border-left: 1px solid #E5E5E5;
@@ -148,6 +171,10 @@ body {
                 #localVideo {
                     border: 1px solid #E5E5E5;
                 }
+            }
+
+            .rtc-controller {
+                text-align: center;
             }
         }
     }

@@ -188,18 +188,26 @@ Mps.Dialog = (function() {
                 this._super.apply(this, arguments);
                 this._users = [];
 
+                var self = this;
                 this.$title = this._$.find('#rtc-title');
                 this.$selfUsername = this._$.find('#rtc-self-username');
                 this.$btnMute = this._$.find('#rtc-btn-mute');
                 this.$btnVideo = this._$.find('#rtc-btn-video');
-                //this._$.on('', function(e) {
-                //});
+                this.log = new Mps.Log('rtc-chat-log');
+                this.$chatForm = this._$.find('#rtc-chat-form').submit(function(e) {
+                    e.preventDefault();
+
+                    var val = self.$chatInput.val();
+                    self.log.add(val);
+                    self.$chatInput.val('').focus();
+                });
+                this.$chatInput = this.$chatForm.find('input');
             },
             /** レイアウト作るためのやつ。消す。 */
             test: function() {
                 this.$title.text('タイトル');
                 this.$selfUsername.text('ほげほげ');
-                this.$btnMute.text('Mute');
+                this.$mute(true);
                 this.$btnVideo.text('stopVideo');
 
                 return this;
@@ -229,6 +237,7 @@ Mps.Dialog = (function() {
                 if (this._webrtc) {
                     return;
                 }
+                var self = this;
                 var webrtc = this._webrtc = new SimpleWebRTC({
                     //url: 'http://syno.in:8887',
                     url: location.origin,
@@ -258,13 +267,18 @@ Mps.Dialog = (function() {
                         document.getElementById("chatLog").innerHTML += data.payload;
                     }
                 });
+                this._$.on('hide.bs.modal', function(e) {
+                    self._webrtc.leaveRoom();
+                });
 
-                // 
-                this.$btnMute.text('Mute');
-                //webrtc.on('audioOff', function (event) {
-                //});
-                //webrtc.on('audioOn', function (event) {
-                //});
+                this._mute = true;
+                this.$mute(this._mute);
+                webrtc.on('audioOff', function (event) {
+                    self.$mute(true);
+                });
+                webrtc.on('audioOn', function (event) {
+                    self.$mute(false);
+                });
 
                 // 
                 this.$btnVideo.text('stopVideo');
@@ -272,6 +286,15 @@ Mps.Dialog = (function() {
                 //});
                 //webrtc.on('videoOn', function (event) {
                 //});
+            },
+            $mute: function(is) {
+                this.$btnMute.removeClass('glyphicon-volume-off').removeClass('glyphicon-volume-up');
+                if (is) {
+                    this.$btnMute.addClass('glyphicon-volume-off');
+                } else {
+                    this.$btnMute.addClass('glyphicon-volume-up');
+                }
+                this._mute = is;
             },
             /**
              * @param {HTMLElement} _text

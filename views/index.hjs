@@ -103,10 +103,18 @@
                     <div class="modal-body">
                         <div class="rtc-table">
                             <div class="rtc-table-cell">
-                                <div id="remoteVideos"></div>
-                                <div>
-                                    <button class="btn btn-default" id="rtc-btn-mute"></button>
-                                    <button class="btn btn-default" id="rtc-btn-video"></button>
+                                <div class="rtc-videos">
+                                    <div id="remoteVideos"></div>
+                                    <div class="rtc-controller">
+                                        <i class="btn btn-default glyphicon" id="rtc-btn-mute"></i>
+                                        <i class="btn btn-default glyphicon" id="rtc-btn-video"></i>
+                                    </div>
+                                </div>
+                                <div class="rtc-chat">
+                                    <div id="rtc-chat-log"></div>
+                                    <form id="rtc-chat-form" action=".">
+                                        <input type="text" placeholder="Input any words" />
+                                    </form>
                                 </div>
                             </div>
                             <div class="rtc-table-cell">
