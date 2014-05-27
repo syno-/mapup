@@ -28,7 +28,7 @@ Mps.rtc = (function() {
                     audio: false
                 },
             });
-            webrtc.on('readyToCall', function () {
+            this._webrtc.on('readyToCall', function () {
                 self._isReadyToCall = true;
                 // TODO
             });
