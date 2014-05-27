@@ -269,6 +269,51 @@ $.extend(Mps.prototype, {
                 }
             }
         });
+        _socket.on('user.invite', function(invite) {
+            Mps.log('user.invite', arguments);
+
+            var to = invite.to;
+            var from = invite.from;
+
+            // 招待されましたダイアログを表示
+            var dlg = Mps.Dialog('invite');
+            dlg.on('invite.agree', function(e) {
+                Mps.log('invite.agree', arguments);
+                self._socket.emit('user.invited', {
+                    to: {
+                        socketId: from.socketId,
+                        agreed: true,
+                    },
+                    from: to
+                });
+                startCall(invite.from.socketId);
+            }).on('invite.disagree', function(e) {
+                Mps.log('invite.disagree', arguments);
+                self._socket.emit('user.invited', {
+                    to: {
+                        socketId: from.socketId,
+                        agreed: false,
+                    },
+                    from: to
+                });
+            }).show();
+        });
+        _socket.on('user.invited', function(invite) {
+            Mps.log('user.invited', arguments);
+
+            if (invite.to.agreed) {
+                startCall(invite.from.socketId);
+            }
+
+            Mps.Dialog('alert').hide();
+        });
+
+        function startCall(socketId) {
+            var user = self.getUserBySocketId(socketId);
+            if (user && self._user) {
+                Mps.Dialog('rtc').setSelf(self._user).addUser(user).begin().show();
+            }
+        }
 
         this.r.$socketDisconnect.click(function(e) {
             _socket.disconnect();
@@ -284,7 +329,23 @@ $.extend(Mps.prototype, {
             var user = self.getUserBySocketId(socketId);
             if (user && self._user) {
                 Mps.log('inviteVideoCallback, user=', user);
-                Mps.Dialog('rtc').setSelf(self._user).addUser(user).begin().show();
+                Mps.Dialog('alert').call({
+                    title: 'hogehoge',
+                    lead: '[' + user.username + ']さんを招待しています…。',
+                    callback: function() {
+                        // click "x"
+                    },
+                });
+                self._socket.emit('user.invite', {
+                    to: {
+                        socketId: socketId,
+                        state: 'request',
+                    },
+                    from: {
+                        socketId: self._user.socketId,
+                        username: self._user.username,
+                    },
+                });
             }
         };
 

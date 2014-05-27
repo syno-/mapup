@@ -11,7 +11,6 @@ Mps.Maps = (function() {
         var r = [];
         colors.forEach(function(color) {
             var url = 'http://www.google.com/intl/en_us/mapfiles/ms/micons/' + color + '-dot.png';
-            //var url = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAwCAYAAAChS3wfAAAcS0lEQ窶ｦOgDOVjNjyatxcPlWii/Hk0rwwne+VyZ5HmHKHUZrP1PwEC8IkVnhqVkAAAAABJRU5ErkJggg=';
             var image = new google.maps.MarkerImage(
                 url,
                 new google.maps.Size(32, 32),

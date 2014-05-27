@@ -161,6 +161,20 @@ io.sockets.on('connection', function(socket) {
             io.sockets.emit('user.chat', base);
         }
     });
+    socket.on('user.invite', function(invite) {
+        console.log('user.invite', invite);
+        var from = invite.from;
+        var to = invite.to;
+
+        io.sockets.socket(to.socketId).emit('user.invite', invite);
+    });
+    socket.on('user.invited', function(invited) {
+        console.log('user.invited', invited);
+        var to = invited.to;
+        var from = invited.from;
+
+        io.sockets.socket(to.socketId).emit('user.invited', invited);
+    });
 
 
     function setData(userdata, cb) {

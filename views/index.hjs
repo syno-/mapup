@@ -84,8 +84,6 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" id="photo-start" class="btn btn-danger">Snap</button>
-                        <button type="button" id="photo-onemore" class="btn btn-primary">One more</button>
                         <button type="button" id="photo-ok" class="btn btn-danger">OK</button>
                     </div>
                 </div><!-- /.modal-content -->
@@ -106,8 +104,8 @@
                                 <div class="rtc-videos">
                                     <div id="remoteVideos"></div>
                                     <div class="rtc-controller">
-                                        <i class="btn btn-default glyphicon" id="rtc-btn-mute"></i>
-                                        <i class="btn btn-default glyphicon" id="rtc-btn-video"></i>
+                                        <button id="rtc-btn-mute" class="btn"><i class="glyphicon"></i></button>
+                                        <button id="rtc-btn-video" class="btn"><i class="glyphicon"></i></button>
                                     </div>
                                 </div>
                                 <div class="rtc-chat">
@@ -126,5 +124,22 @@
                 </div><!-- /.modal-content -->
             </div><!-- /.modal-dialog -->
         </div><!-- /.modal -->
+
+        <!-- Invite dialog -->
+        <div class="modal fade" id="invite" tabindex="-1" role="dialog" aria-labelledby="take-a-photo" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-body">
+                        <h3>Just invited from </h3>
+                        <p>Would you pick up a call?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" id="invite-agree" class="btn btn-primary">Agree</button>
+                        <button type="button" id="invite-disagree" class="btn btn-danger">Disagree</button>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!-- /.modal -->
+
     </body>
 </html>

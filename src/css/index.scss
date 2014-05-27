@@ -142,6 +142,7 @@ body {
 
                     #remoteVideos {
                         min-height: 360px;
+                        text-align: center;
                     }
                     .rtc-controller {
                         padding: 20px 0;
@@ -153,7 +154,8 @@ body {
 
                     #rtc-chat-log {
                         height: 100px;
-                        padding: 20px;
+                        padding: 8px 12px;
+                        overflow-y: auto;
                     }
 
                     input {
@@ -176,6 +178,11 @@ body {
             .rtc-controller {
                 text-align: center;
             }
+
+            #rtc-self-username {
+                font-size: 2em;
+                text-align: center;
+            }
         }
     }
 
@@ -187,6 +194,15 @@ body {
             padding: 0 10px;
             cursor: pointer;
         }
+    }
+
+    .popalert {
+        position: absolute;
+        left: 10%;
+        top: 34px;
+        right: 10%;
+        bottom: auto;
+        height: 54px;
     }
 
     .typeahead {

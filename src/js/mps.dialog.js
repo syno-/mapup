@@ -39,9 +39,6 @@ Mps.Dialog = (function() {
             this._super.apply(this, arguments);
             this._dlgId = dlgId;
         },
-        initBootstrap: function() {
-            this._$ = $('#' + this._dlgId);
-        },
     });
 
     var BootstrapDialogProto = DialogProto.extend({
@@ -100,7 +97,7 @@ Mps.Dialog = (function() {
                 this._spinner = new Spinner(this.opts).spin($body[0]);
                 var $spinner = $(this._spinner.el).attr('id', dlgId);
 
-                DialogProto.prototype.initBootstrap.apply(this, arguments);
+                this._$ = $('#' + this._dlgId);
                 this.hide();
             }
         }),
@@ -110,19 +107,19 @@ Mps.Dialog = (function() {
                 this._maxWidth = 640;
                 this._maxHeight = 480;
                 var self = this;
-                //this._$.on('hide.bs.modal', function(e) {
-                //});
+                this._$.on('hide.bs.modal', function(e) {
+                    self.stopVideo();
+                });
                 var $dlg = this._$.find('.modal-dialog');
                 var $body = this._$.find('.modal-body');
-                this.$start = $('#photo-start').click(function(e) {
-                    self.stopVideo();
-                });
-                this.$onemore = $('#photo-onemore').click(function(e) {
-                    self.startVideo();
-                });
+                //this.$start = $('#photo-start').click(function(e) {
+                //    self.stopVideo();
+                //});
+                //this.$onemore = $('#photo-onemore').click(function(e) {
+                //    self.startVideo();
+                //});
                 this.$ok = $('#photo-ok').click(function(e) {
                     self.emit('ok', [e, self.$video.width(), self.$video.height()]);
-                    self.stopVideo();
                     self._$.modal('hide');
                 });
                 this.$video = $('#photo-video');
@@ -200,15 +197,20 @@ Mps.Dialog = (function() {
                     var val = self.$chatInput.val();
                     self.log.add(val);
                     self.$chatInput.val('').focus();
+
+                    var webrtc = Mps.rtc.get().getRTC();
+                    webrtc.sendDirectlyToAll("text chat", "chat", val);
                 });
                 this.$chatInput = this.$chatForm.find('input');
+
+                this.setMute(true);
+                this.setVideoEnabled(true);
             },
             /** レイアウト作るためのやつ。消す。 */
             test: function() {
                 this.$title.text('タイトル');
                 this.$selfUsername.text('ほげほげ');
                 this.$mute(true);
-                this.$btnVideo.text('stopVideo');
 
                 return this;
             },
@@ -233,83 +235,144 @@ Mps.Dialog = (function() {
             removeUser: function(user) {
                 // TODO
             },
-            initSimpleWebRTC: function() {
-                if (this._webrtc) {
-                    return;
+            setMute: function(is) {
+                var btn = this.$btnMute.removeClass();
+                var icon = btn.children().removeClass();
+                if (is) {
+                    btn.addClass('btn btn-danger');
+                    icon.addClass('glyphicon glyphicon-volume-off');
+                } else {
+                    btn.addClass('btn btn-default');
+                    icon.addClass('glyphicon glyphicon-volume-up');
                 }
+                this._mute = is;
+            },
+            setVideoEnabled: function(is) {
+                var btn = this.$btnVideo.removeClass();
+                var icon = btn.children().removeClass();
+                if (is) {
+                    btn.addClass('btn btn-danger');
+                    icon.addClass('glyphicon glyphicon-facetime-video');
+                } else {
+                    btn.addClass('btn btn-default');
+                    icon.addClass('glyphicon glyphicon-facetime-video');
+                }
+                this._videoEnabled = is;
+            },
+            initSimpleWebRTC: function() {
                 var self = this;
-                var webrtc = this._webrtc = new SimpleWebRTC({
-                    //url: 'http://syno.in:8887',
-                    url: location.origin,
-                    localVideoEl: 'localVideo',
-                    remoteVideosEl: 'remoteVideos',
-                    autoRequestMedia: true,
-                    media: {
-                        video: {
-                            mandatory: {
-                                maxWidth: 320,
-                                maxHeight: 240,
-                                maxFrameRate: 8
-                            }
-                        },
-                        audio: false
-                    },
-                });
-                webrtc.on('readyToCall', function () {
-                    // TODO
-                    webrtc.joinRoom('your awesome room name');
-                });
+                var rtc = Mps.rtc.get();
+                var webrtc = rtc.getRTC();
                 webrtc.on('joinedRoom', function () {
                     webrtc.sendDirectlyToAll("text chat", "chat", ""); // omajinai
                 });
                 webrtc.on('channelMessage', function (peer, label, data, ch, ev) {
                     if (label == 'text chat' && data.type == 'chat') {
-                        document.getElementById("chatLog").innerHTML += data.payload;
+                        Mps.log('channelMessage');
+                        self.log.add(data.payload);
                     }
                 });
                 this._$.on('hide.bs.modal', function(e) {
                     self._webrtc.leaveRoom();
                 });
 
+                // audio
                 this._mute = true;
-                this.$mute(this._mute);
+                this.setMute(this._mute);
                 webrtc.on('audioOff', function (event) {
-                    self.$mute(true);
+                    self.setMute(true);
                 });
                 webrtc.on('audioOn', function (event) {
-                    self.$mute(false);
+                    self.setMute(false);
                 });
 
-                // 
-                this.$btnVideo.text('stopVideo');
+                // video
+                this._videoEnabled = true;
+                this.setVideoEnabled(this._videoEnabled);
                 //webrtc.on('videoOff', function (event) {
                 //});
                 //webrtc.on('videoOn', function (event) {
                 //});
             },
-            $mute: function(is) {
-                this.$btnMute.removeClass('glyphicon-volume-off').removeClass('glyphicon-volume-up');
-                if (is) {
-                    this.$btnMute.addClass('glyphicon-volume-off');
-                } else {
-                    this.$btnMute.addClass('glyphicon-volume-up');
-                }
-                this._mute = is;
-            },
             /**
              * @param {HTMLElement} _text
              */
             sendChat: function(_text) {
-                var context = document.getElementById("snap").getContext("2d");
-                context.beginPath();
-                context.rect(15, 0, 90, 90);
-                context.clip();
-                context.drawImage(document.getElementById("localVideo"),0, 0, 120, 90);
-                var snap = document.getElementById("snap").toDataURL();
-                var html = '<div class=chatText><img width="60" src="' + snap + '">' + _text.value + '</div>';
-                this._webrtc.sendDirectlyToAll("text chat", "chat", html);
-                document.getElementById("chatLog").innerHTML += html;
-                _text.value = '';
+                //var context = document.getElementById("snap").getContext("2d");
+                //context.beginPath();
+                //context.rect(15, 0, 90, 90);
+                //context.clip();
+                //context.drawImage(document.getElementById("localVideo"),0, 0, 120, 90);
+                //var snap = document.getElementById("snap").toDataURL();
+                //var html = '<div class=chatText><img width="60" src="' + snap + '">' + _text.value + '</div>';
+                var webrtc = Mps.rtc.get().getRTC();
+                webrtc.sendDirectlyToAll("text chat", "chat", html);
+                //document.getElementById("chatLog").innerHTML += html;
+                //_text.value = '';
+            },
+        }),
+        alert: DialogProto.extend({
+            init: function(dlgId) {
+                this._super.apply(this, arguments);
+                this.$body = $('body');
+            },
+            call: function(opts) {
+                var callback = opts.callback;
+                var $alert = this.create();
+                if (opts.title) {
+                    $alert.append($('<strong>').text(opts.title));
+                }
+                if (opts.lead) {
+                    $alert.append($('<span>').text(opts.lead));
+                }
+                if (opts.callback) {
+                    $alert.bind('close.bs.alert', function(e) {
+                        if (opts.callback) opts.callback.apply(this, arguments);
+                    });
+                }
+                this.$body.append($alert);
+                //$(".alert").alert('close')
+            },
+            show: function() {
+            },
+            hide: function() {
+                this.$body.find('.popalert').remove();
+            },
+            create: function() {
+                var $alert = $('<div/>')
+                .addClass('popalert alert alert-info fade in');
+
+                var $btn = $('<button type="button"/>')
+                .addClass('close')
+                .attr('data-dismiss', 'alert')
+                .attr('aria-hidden', 'true');
+
+                return $alert.append($btn);
+            }
+        }),
+        invite: BootstrapDialogProto.extend({
+            init: function(dlgId) {
+                this._super.apply(this, arguments);
+                var self = this;
+                this._isAgreed = false;
+                var $agree = $('#invite-agree').click(function(e) {
+                    Mps.log('invite, agree');
+                    self._isAgreed = true;
+                    self._$.modal('hide');
+                });
+                var $disagree = $('#invite-disagree').click(function(e) {
+                    Mps.log('invite, disagree');
+                    self._isAgreed = false;
+                    self._$.modal('hide');
+                });
+                this._$.on('hide.bs.modal', function(e) {
+                    Mps.log('invite, hide.bs.modal');
+                    if (self._isAgreed) {
+                        self.emit('invite.agree', [e]);
+                    } else {
+                        self.emit('invite.disagree', [e]);
+                    }
+                });
             },
         }),
         disconnected: DialogProto.extend({
