@@ -61,7 +61,18 @@ Mps.Log = (function() {
         get: function() {
             return this._$;
         },
+        clear: function() {
+            this._$.empty();
+        },
+        push: function(json) {
+            var $p = this.create(json);
+            this._$.append($p);
+            this._$.scrollTop(this._$[0].scrollHeight);
+        },
         add: function(o) {
+            if (this._options.reverse) {
+            } else {
+            }
             var msgs;
             if (typeof o === 'string') {
                 msgs = [o];
@@ -93,10 +104,23 @@ Mps.Log = (function() {
             var log;
             while ((log = a.pop())) {
                 var $p = $('<p/>').appendTo(self._$);
-                $('<span/>').text('[' + log.date.toISOString() + '] ').appendTo($p);
+                var dispDate = log.date.getHours() + ':' + log.date.getMinutes();
+                $('<time/>').attr('datetime', log.date.toISOString())
+                .text('[' + dispDate + '] ').appendTo($p);
                 //$('<br/>').appendTo($p);
                 $('<span/>').text(log.msg).appendTo($p);
             }
+        },
+        create: function(json) {
+            var date = new Date();
+            var $p = $('<p/>');
+            var dispDate = date.getHours() + ':' + date.getMinutes();
+            $('<time/>').attr('datetime', date.toISOString())
+            .text('[' + dispDate + '] ').appendTo($p);
+            $('<span/>').addClass('name').text(json.name).appendTo($p);
+            $('<span/>').text(json.message).appendTo($p);
+
+            return $p;
         },
     });
 

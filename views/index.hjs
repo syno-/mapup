@@ -130,7 +130,7 @@
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-body">
-                        <h3>Just invited from </h3>
+                        <h3 id="invite-title"></h3>
                         <p>Would you pick up a call?</p>
                     </div>
                     <div class="modal-footer">

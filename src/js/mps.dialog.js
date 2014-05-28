@@ -49,6 +49,9 @@ Mps.Dialog = (function() {
         show: function() {
             this._$.modal();
         },
+        hide: function() {
+            this._$.modal('hide');
+        },
         modal: function() {
             this._$.modal.apply(this._$, arguments);
         },
@@ -195,11 +198,16 @@ Mps.Dialog = (function() {
                     e.preventDefault();
 
                     var val = self.$chatInput.val();
-                    self.log.add(val);
                     self.$chatInput.val('').focus();
 
                     var webrtc = Mps.rtc.get().getRTC();
-                    webrtc.sendDirectlyToAll("text chat", "chat", val);
+                    var o = {
+                        name: self._self.displayUsername(),
+                        message: val,
+                    };
+                    self.log.push(o);
+                    var json = JSON.stringify(o);
+                    webrtc.sendDirectlyToAll("text chat", "chat", json);
                 });
                 this.$chatInput = this.$chatForm.find('input');
 
@@ -215,6 +223,7 @@ Mps.Dialog = (function() {
                 return this;
             },
             setSelf: function(user) {
+                this._self = user;
                 this.$selfUsername.text(user.displayUsername());
 
                 return this;
@@ -225,10 +234,10 @@ Mps.Dialog = (function() {
 
                 return this;
             },
-            begin: function() {
-                this.initSimpleWebRTC();
+            begin: function(socketId) {
+                this.initSimpleWebRTC(socketId);
 
-                return this;
+                this.show();
             },
             end: function() {
             },
@@ -259,17 +268,26 @@ Mps.Dialog = (function() {
                 }
                 this._videoEnabled = is;
             },
-            initSimpleWebRTC: function() {
+            initSimpleWebRTC: function(socketId) {
                 var self = this;
                 var rtc = Mps.rtc.get();
                 var webrtc = rtc.getRTC();
+                webrtc.on('readyToCall', function () {
+                    Mps.log('initSimpleWebRTC', socketId);
+                    webrtc.joinRoom(socketId);
+                });
                 webrtc.on('joinedRoom', function () {
                     webrtc.sendDirectlyToAll("text chat", "chat", ""); // omajinai
                 });
                 webrtc.on('channelMessage', function (peer, label, data, ch, ev) {
                     if (label == 'text chat' && data.type == 'chat') {
                         Mps.log('channelMessage');
-                        self.log.add(data.payload);
+                        try {
+                            var json = JSON.parse(data.payload);
+                            self.log.push(json);
+                        } catch (e) {
+                            Mps.log('not a json', e);
+                        }
                     }
                 });
                 this._$.on('hide.bs.modal', function(e) {
@@ -289,27 +307,29 @@ Mps.Dialog = (function() {
                 // video
                 this._videoEnabled = true;
                 this.setVideoEnabled(this._videoEnabled);
-                //webrtc.on('videoOff', function (event) {
-                //});
-                //webrtc.on('videoOn', function (event) {
-                //});
+                webrtc.on('videoOff', function (event) {
+                    self.setVideoEnabled(false);
+                });
+                webrtc.on('videoOn', function (event) {
+                    self.setVideoEnabled(true);
+                });
             },
-            /**
-             * @param {HTMLElement} _text
-             */
-            sendChat: function(_text) {
-                //var context = document.getElementById("snap").getContext("2d");
-                //context.beginPath();
-                //context.rect(15, 0, 90, 90);
-                //context.clip();
-                //context.drawImage(document.getElementById("localVideo"),0, 0, 120, 90);
-                //var snap = document.getElementById("snap").toDataURL();
-                //var html = '<div class=chatText><img width="60" src="' + snap + '">' + _text.value + '</div>';
-                var webrtc = Mps.rtc.get().getRTC();
-                webrtc.sendDirectlyToAll("text chat", "chat", html);
-                //document.getElementById("chatLog").innerHTML += html;
-                //_text.value = '';
-            },
+            ///**
+            // * @param {HTMLElement} _text
+            // */
+            //sendChat: function(_text) {
+            //    //var context = document.getElementById("snap").getContext("2d");
+            //    //context.beginPath();
+            //    //context.rect(15, 0, 90, 90);
+            //    //context.clip();
+            //    //context.drawImage(document.getElementById("localVideo"),0, 0, 120, 90);
+            //    //var snap = document.getElementById("snap").toDataURL();
+            //    //var html = '<div class=chatText><img width="60" src="' + snap + '">' + _text.value + '</div>';
+            //    var webrtc = Mps.rtc.get().getRTC();
+            //    webrtc.sendDirectlyToAll("text chat", "chat", html);
+            //    //document.getElementById("chatLog").innerHTML += html;
+            //    //_text.value = '';
+            //},
         }),
         alert: DialogProto.extend({
             init: function(dlgId) {
@@ -325,15 +345,13 @@ Mps.Dialog = (function() {
                 if (opts.lead) {
                     $alert.append($('<span>').text(opts.lead));
                 }
-                if (opts.callback) {
+                if (opts.cancel) {
                     $alert.bind('close.bs.alert', function(e) {
-                        if (opts.callback) opts.callback.apply(this, arguments);
+                        if (opts.cancel) opts.cancel.apply(this, arguments);
                     });
                 }
                 this.$body.append($alert);
                 //$(".alert").alert('close')
-            },
-            show: function() {
             },
             hide: function() {
                 this.$body.find('.popalert').remove();
@@ -344,6 +362,7 @@ Mps.Dialog = (function() {
 
                 var $btn = $('<button type="button"/>')
                 .addClass('close')
+                .html('&times;')
                 .attr('data-dismiss', 'alert')
                 .attr('aria-hidden', 'true');
 
@@ -373,6 +392,16 @@ Mps.Dialog = (function() {
                         self.emit('invite.disagree', [e]);
                     }
                 });
+                this.$title = $('#invite-title');
+            },
+            user: function(user) {
+                var s = 'Just invited from ';
+                if (user) {
+                    s += user.displayUsername();
+                } else {
+                    s += '(???)';
+                }
+                this.$title.text(s);
             },
         }),
         disconnected: DialogProto.extend({

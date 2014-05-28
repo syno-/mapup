@@ -20,6 +20,7 @@ Mps.rtc = (function() {
                 media: {
                     video: {
                         mandatory: {
+                            // CSS合わせておく
                             maxWidth: 320,
                             maxHeight: 240,
                             maxFrameRate: 8
@@ -28,17 +29,6 @@ Mps.rtc = (function() {
                     audio: false
                 },
             });
-            this._webrtc.on('readyToCall', function () {
-                self._isReadyToCall = true;
-                // TODO
-            });
-        },
-        joinRoom: function(roomId) {
-            // TODO: readyToCallされていることが前提。
-            webrtc.joinRoom(roomId);
-            //if (this._isReadyToCall) {
-            //} else {
-            //}
         },
         getRTC: function() {
             return this._webrtc;

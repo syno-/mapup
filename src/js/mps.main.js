@@ -275,34 +275,42 @@ $.extend(Mps.prototype, {
             var to = invite.to;
             var from = invite.from;
 
-            // 招待されましたダイアログを表示
             var dlg = Mps.Dialog('invite');
-            dlg.on('invite.agree', function(e) {
-                Mps.log('invite.agree', arguments);
-                self._socket.emit('user.invited', {
-                    to: {
-                        socketId: from.socketId,
-                        agreed: true,
-                    },
-                    from: to
-                });
-                startCall(invite.from.socketId);
-            }).on('invite.disagree', function(e) {
-                Mps.log('invite.disagree', arguments);
-                self._socket.emit('user.invited', {
-                    to: {
-                        socketId: from.socketId,
-                        agreed: false,
-                    },
-                    from: to
-                });
-            }).show();
+            if (to.state === 'request') {
+                // 招待されましたダイアログを表示
+                var user = self.getUserBySocketId(from.socketId);
+                dlg.user(user);
+                dlg.on('invite.agree', function(e) {
+                    Mps.log('invite.agree', arguments);
+                    self._socket.emit('user.invited', {
+                        to: {
+                            socketId: from.socketId,
+                            agreed: true,
+                        },
+                        from: to
+                    });
+                    startCall(invite.from.socketId);
+                }).on('invite.disagree', function(e) {
+                    Mps.log('invite.disagree', arguments);
+                    self._socket.emit('user.invited', {
+                        to: {
+                            socketId: from.socketId,
+                            agreed: false,
+                        },
+                        from: to
+                    });
+                }).show();
+            } else if (to.state === 'cancel') {
+                dlg.hide();
+            } else {
+                Mps.log('Not defined "user.invite".', invite);
+            }
         });
         _socket.on('user.invited', function(invite) {
             Mps.log('user.invited', arguments);
 
             if (invite.to.agreed) {
-                startCall(invite.from.socketId);
+                startCall(invite.to.socketId);
             }
 
             Mps.Dialog('alert').hide();
@@ -311,7 +319,7 @@ $.extend(Mps.prototype, {
         function startCall(socketId) {
             var user = self.getUserBySocketId(socketId);
             if (user && self._user) {
-                Mps.Dialog('rtc').setSelf(self._user).addUser(user).begin().show();
+                Mps.Dialog('rtc').setSelf(self._user).addUser(user).begin(socketId);
             }
         }
 
@@ -330,10 +338,20 @@ $.extend(Mps.prototype, {
             if (user && self._user) {
                 Mps.log('inviteVideoCallback, user=', user);
                 Mps.Dialog('alert').call({
-                    title: 'hogehoge',
-                    lead: '[' + user.username + ']さんを招待しています…。',
-                    callback: function() {
+                    title: 'Inviting...',
+                    lead: '[' + user.displayUsername() + ']さんを招待しています…。',
+                    cancel: function(e) {
                         // click "x"
+                        self._socket.emit('user.invite', {
+                            to: {
+                                socketId: socketId,
+                                state: 'cancel',
+                            },
+                            from: {
+                                socketId: self._user.socketId,
+                                username: self._user.username,
+                            },
+                        });
                     },
                 });
                 self._socket.emit('user.invite', {
