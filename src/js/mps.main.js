@@ -43,9 +43,8 @@ $.extend(Mps.prototype, {
     },
     initMaps: function() {
         this._map = new google.maps.Map(this.r.$map[0], {
-            // Osaka
-            center: new google.maps.LatLng(34.701909, 135.494977),
-            zoom: 12,
+            zoom: 2,
+            center: new google.maps.LatLng(35.681382,139.766084),
             mapTypeId: google.maps.MapTypeId.ROADMAP
         });
     },
@@ -59,19 +58,26 @@ $.extend(Mps.prototype, {
         var _socket = this._socket;
 
         // init my location
-        //self.r.spin.show();
-        //Mps.Geo.current().done(function(pos) {
-        //    Mps.log('detected: ', pos);
-        //    this.setMyself({
-        //        lat: pos.coords.latitude,
-        //        lng: pos.coords.longitude,
-        //    });
-        //}).fail(function(e) {
-        //    Mps.log('Geolocation: ' + e.message, e);
-        //    this.setMyself(null);
-        //}).always(function(e) {
-        //    self.r.spin.hide();
-        //});
+        self.r.spin.show();
+        Mps.Geo.current().done(function(pos) {
+            Mps.log('detected: ', pos);
+            // TODO: 接続遅延があった時はself._userいなくてバグるかも
+            self._user.marker.latlng = {
+                lat: pos.coords.latitude,
+                lng: pos.coords.longitude,
+            };
+            self._map.setCenter(self._user.marker.latlng);
+            self._map.setZoom(13);
+        }).fail(function(e) {
+            Mps.log('Geolocation: ' + e.message, e);
+            self._user.marker.latlng = {
+                // Osaka
+                lat: 34.701909,
+                lng: 135.494977,
+            };
+        }).always(function(e) {
+            self.r.spin.hide();
+        });
 
         this.r.dlgPhoto.on('ok', function(e, w, h) {
             this.capture(self.r.photoContext, self.r.$photo.width(), self.r.$photo.height());
@@ -157,7 +163,6 @@ $.extend(Mps.prototype, {
 
         function createUser(userdata) {
             var user = new Mps.User(userdata).on('marker.click', function(e) {
-                //self._map.setZoom(12);
                 //self._map.setCenter(this.marker.ref.getPosition());
 
                 if (!user.infoWindow) {
@@ -444,10 +449,6 @@ $.extend(Mps.prototype, {
             user.tags = saved.tags;
         } else {
             Mps.log('  new myself');
-            user.marker.latlng = {
-                lat: 34.701909 + Math.round(Math.random() * 100) / 10000, // TODO
-                lng: 135.494977 + Math.round(Math.random() * 100) / 10000,
-            };
         }
 
         // Username

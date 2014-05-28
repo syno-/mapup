@@ -117,7 +117,7 @@ Mps.Log = (function() {
             var dispDate = date.getHours() + ':' + date.getMinutes();
             $('<time/>').attr('datetime', date.toISOString())
             .text('[' + dispDate + '] ').appendTo($p);
-            $('<span/>').addClass('name').text(json.name).appendTo($p);
+            $('<strong/>').addClass('name').text(json.name).appendTo($p);
             $('<span/>').text(json.message).appendTo($p);
 
             return $p;

@@ -291,7 +291,7 @@ Mps.Dialog = (function() {
                     }
                 });
                 this._$.on('hide.bs.modal', function(e) {
-                    self._webrtc.leaveRoom();
+                    webrtc.leaveRoom();
                 });
 
                 // audio
