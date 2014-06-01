@@ -6,7 +6,9 @@
 var express = require('express');
 var routes = require('./routes');
 var user = require('./routes/user');
-var http = require('http');
+var fs = require('fs');
+//var http = require('http');
+var https = require('https');
 var path = require('path');
 var mod = {
     image: require('./image.upload'),
@@ -60,7 +62,12 @@ app.get('/image', function(req, res) {
     mod.image.receive.apply(this, arguments);
 });
 
-var server = http.createServer(app);
+//var server = http.createServer(app);
+var server = https.createServer({
+    key: fs.readFileSync('./secret-key.pem'),
+    cert: fs.readFileSync('./server.cert'),
+    passphrase: '8c9bf1b4e1fb72f0d341f101f496813d21a21773',
+}, app);
 server.listen(app.get('port'), function() {
     console.log('Express server listening on port ' + app.get('port'));
 });

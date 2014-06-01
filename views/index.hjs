@@ -9,7 +9,7 @@
         <link rel="stylesheet" href="/libs/css/bootstrap.min.css" />
         <link rel="stylesheet" href="/css/index.css" />
 
-        <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyB91R_kufMhnZTSpymKpgOx6DmwJMKLDz0&amp;sensor=false&amp;region=JP"></script>
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB91R_kufMhnZTSpymKpgOx6DmwJMKLDz0&amp;sensor=false&amp;region=JP"></script>
 
         <script type="text/javascript" src="/libs/js/jquery-2.1.0.min.js"></script>
         <script type="text/javascript" src="/libs/js/bootstrap.min.js"></script>
