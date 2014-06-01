@@ -66,7 +66,7 @@
         <div id="log" class="container mps-overlay"></div>
         <div id="chat" class="container mps-overlay">
             <form id="form-chat" action=".">
-                <input type="text" id="chat-input" name="text" />
+                <input type="text" id="chat-input" name="text" placeholder="Chat..." />
             </form>
         </div>
 

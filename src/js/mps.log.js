@@ -107,6 +107,9 @@ Mps.Log = (function() {
                 var dispDate = log.date.getHours() + ':' + log.date.getMinutes();
                 $('<time/>').attr('datetime', log.date.toISOString())
                 .text('[' + dispDate + '] ').appendTo($p);
+                if (log.imageUrl) {
+                    $('<img/>').attr('src', log.imageUrl).appendTo($p);
+                }
                 //$('<br/>').appendTo($p);
                 $('<span/>').text(log.msg).appendTo($p);
             }
@@ -117,6 +120,7 @@ Mps.Log = (function() {
             var dispDate = date.getHours() + ':' + date.getMinutes();
             $('<time/>').attr('datetime', date.toISOString())
             .text('[' + dispDate + '] ').appendTo($p);
+            $('<img/>').attr('src', json.imageUrl).appendTo($p);
             $('<strong/>').addClass('name').text(json.name).appendTo($p);
             $('<span/>').text(json.message).appendTo($p);
 

@@ -18,7 +18,6 @@ $.extend(Mps.prototype, {
             $formChat: $('#form-chat'),
             $chatInput: $('#chat-input'),
             $formTags: $('#form-tags'),
-            //$log: $('#log'),
             log: new Mps.Log('log', {
                 limit: 100
             }),
@@ -57,28 +56,6 @@ $.extend(Mps.prototype, {
         var self = this;
         var _socket = this._socket;
 
-        // init my location
-        self.r.spin.show();
-        Mps.Geo.current().done(function(pos) {
-            Mps.log('detected: ', pos);
-            // TODO: 接続遅延があった時はself._userいなくてバグるかも
-            self._user.marker.latlng = {
-                lat: pos.coords.latitude,
-                lng: pos.coords.longitude,
-            };
-            self._map.setCenter(self._user.marker.latlng);
-            self._map.setZoom(13);
-        }).fail(function(e) {
-            Mps.log('Geolocation: ' + e.message, e);
-            self._user.marker.latlng = {
-                // Osaka
-                lat: 34.701909,
-                lng: 135.494977,
-            };
-        }).always(function(e) {
-            self.r.spin.hide();
-        });
-
         this.r.dlgPhoto.on('ok', function(e, w, h) {
             this.capture(self.r.photoContext, self.r.$photo.width(), self.r.$photo.height());
             var url = this.toDataURL(64, 48);
@@ -103,6 +80,9 @@ $.extend(Mps.prototype, {
             });
         });
         this.r.dlgPhoto.show();
+        this.r.$photo.click(function(e) {
+            self.r.dlgPhoto.show();
+        });
 
         function addUser(userdata) {
             Mps.log('addUser, userdata=', userdata);
@@ -116,7 +96,7 @@ $.extend(Mps.prototype, {
                         // 自分が既に存在する
                     } else {
                         self._user = user;
-                        self.initMyself(user);
+                        onConnectedMyself(user);
                         self.r.log.add('あなたのIDは' + user.socketId + 'です。');
                     }
 
@@ -125,7 +105,7 @@ $.extend(Mps.prototype, {
                     self._socket.emit('user.connect', sendUserdata);
                 } else {
                     Mps.log('addUser, other');
-                    self.r.log.add('ID[' + userdata.socketId + '] さんが接続しました。');
+                    self.r.log.add('ID[' + user.displayUsername() + '] さんが接続しました。');
                 }
 
                 self._users.push(user);
@@ -142,6 +122,32 @@ $.extend(Mps.prototype, {
             }
 
             return user;
+        }
+
+        function onConnectedMyself(user) {
+            self.initMyself(user);
+
+            // Start detect location
+            //self.r.spin.show();
+            Mps.Geo.current().done(function(pos) {
+                Mps.log('detected: ', pos);
+                // TODO: 接続遅延があった時はself._userいなくてバグるかも
+                self._user.marker.latlng = {
+                    lat: pos.coords.latitude,
+                    lng: pos.coords.longitude,
+                };
+                self._map.setCenter(self._user.marker.latlng);
+                self._map.setZoom(13);
+            }).fail(function(e) {
+                Mps.log('Geolocation: ' + e.message, e);
+                self._user.marker.latlng = {
+                    // Osaka
+                    lat: 34.701909,
+                    lng: 135.494977,
+                };
+            }).always(function(e) {
+                //self.r.spin.hide();
+            });
         }
 
         function removeUser(user) {
@@ -253,20 +259,20 @@ $.extend(Mps.prototype, {
             if (user) {
                 if (userdata.marker) {
                     user.marker.latlng = userdata.marker;
-                    self.r.log.add('ID[' + userdata.socketId + '] さんの位置が更新されました。');
+                    //self.r.log.add('[' + user.displayUsername() + '] さんの位置が更新されました。');
                 }
                 if (userdata.username) {
                     user.username = userdata.username;
-                    self.r.log.add('ID[' + userdata.socketId + '] さんの名前が' + userdata.username + 'に更新されました。');
+                    //self.r.log.add('[' + user.displayUsername() + '] さんの名前が' + userdata.username + 'に更新されました。');
                 }
                 if (userdata.tags) {
                     user.tags = userdata.tags;
-                    self.r.log.add('ID[' + userdata.socketId + '] さんのタグが修正されました。');
+                    //self.r.log.add('[' + user.displayUsername() + '] さんのタグが修正されました。');
                     self.refreshTagList();
                 }
                 if (userdata.imageName) {
                     user.imageName = userdata.imageName;
-                    self.r.log.add('ID[' + userdata.socketId + '] さんの画像が修正されました。');
+                    //self.r.log.add('[' + user.displayUsername() + '] さんの画像が修正されました。');
                 }
 
                 if (self._user === user) {
@@ -378,6 +384,10 @@ $.extend(Mps.prototype, {
             var val = self.r.$chatInput.val();
             self.r.$chatInput.focus().val('');
 
+            if (!val) {
+                // input field is empty.
+                return;
+            }
             if (self._user) {
                 self._socket.emit('user.chat', {
                     to: {
@@ -406,6 +416,11 @@ $.extend(Mps.prototype, {
                 username = '(???)';
             }
             self.r.log.add('[' + username + ']: ' + chat.to.text);
+            //self.r.log.add({
+            //    username: username,
+            //    imageUrl: (user) ? user.getImageUrl() : null,
+            //    text: chat.to.text,
+            //});
         });
 
         setMenuShown(true);

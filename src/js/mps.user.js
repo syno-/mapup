@@ -81,12 +81,10 @@ Mps.User = (function() {
                 "latlng": {
                     set: function(newValue) {
                         self._latlng = newValue;
-                        if (this.ref) {
-                            if (newValue) {
-                                this.ref.setPosition(new google.maps.LatLng(newValue.lat, newValue.lng));
-                            } else {
-                                this.ref.setPosition(null);
-                            }
+                        if (newValue) {
+                            self._marker.setPosition(new google.maps.LatLng(newValue.lat, newValue.lng));
+                        } else {
+                            self._marker.setPosition(null);
                         }
                     },
                     get: function() {
@@ -136,10 +134,11 @@ Mps.User = (function() {
             }
         },
         setIcon: function(imageName) {
+            this._imageName = imageName;
             var self = this;
             if (self._marker) {
                 var m = self._marker;
-                var url = location.origin + '/image?filename=' + imageName;
+                var url = this.getImageUrl();
                 Mps.log('pin url=', url);
                 m.setIcon({
                     size: new google.maps.Size(64, 48),
@@ -147,6 +146,10 @@ Mps.User = (function() {
                     url: url
                 });
             }
+        },
+        getImageUrl: function() {
+            var url = location.origin + '/image?filename=' + this._imageName;
+            return url;
         },
         destroy: function() {
             var marker = this._marker;

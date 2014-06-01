@@ -130,11 +130,14 @@ Mps.Dialog = (function() {
                 $dlg.css({
                     width: (this._maxWidth + padding * 2) + 'px'
                 });
-
-                self.startVideo();
             },
             isVisible: function() {
                 return this._$.is(':visible');
+            },
+            show: function() {
+                BootstrapDialogProto.prototype.show.apply(this, arguments);
+
+                this.startVideo();
             },
             startVideo: function() {
                 var self = this;
@@ -203,6 +206,7 @@ Mps.Dialog = (function() {
                     var webrtc = Mps.rtc.get().getRTC();
                     var o = {
                         name: self._self.displayUsername(),
+                        imageUrl: self._self.getImageUrl(),
                         message: val,
                     };
                     self.log.push(o);
