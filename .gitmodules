@@ -1,6 +1,3 @@
-[submodule "meetup.js"]
-	path = meetup.js
-	url = git@github.com:synou-/meetup.js.git
 [submodule "SimpleWebRTC"]
 	path = SimpleWebRTC
 	url = https://github.com/HenrikJoreteg/SimpleWebRTC.git
