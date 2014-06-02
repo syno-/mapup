@@ -48,7 +48,6 @@ load()
 cd $defaultPath/public
 load
 
-# init meetup.js
 cd $defaultPath
 pwd
 git submodule update --init
