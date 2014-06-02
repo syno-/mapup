@@ -42,24 +42,22 @@ load()
 		mkdir -p $PATH_JSLIB
 		curl -o $PATH_JSLIB/${TYPEAHEAD_JS_FILENAME} -L http://twitter.github.com/typeahead.js/releases/latest/${TYPEAHEAD_JS_FILENAME}
 	fi
-
-	echo "Done!"
 }
 
 # load depenencies
-cd $defaultPath
-cd public
+cd $defaultPath/public
 load
 
 # init meetup.js
 cd $defaultPath
 pwd
-cd meetup.js/
 git submodule update --init
 npm i
-cd SimpleWebRTC/ && npm i && cd ../
-cd signalmaster/ && npm i && cd ../
+npm i
+npm i --prefix SimpleWebRTC/
+npm i --prefix SimpleWebRTC/
 grunt release
-cp -R release ../public/libs/meetup.js
 
+
+echo "Done!"
 

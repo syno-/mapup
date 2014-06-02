@@ -1,28 +1,31 @@
 
-example
+Mapup
 ===============
+
+Setup
+--------------
 
 How to build (Develop)
 --------------
 
 ### Build requirement
 
-* Git
-* Ruby
-    * Ruby Gems
-        * sass
-* Node.js
-    * Grunt
+* Git (1.9.3)
+* ruby (v2.1.2p95)
+* sass (Sass 3.3.7)
+* node.js (v0.11.13)
+* grunt-cli (v0.1.13)
 
-### Setup
+This modules is ready, execute the line :
 
+    $ ./load-dependencies.sh
 
 
 Browsers
 --------------
 
-- Firefox (latest)
-- Google Chrome (latest)
+* Firefox (latest)
+* Google Chrome (latest)
 
 
 License
