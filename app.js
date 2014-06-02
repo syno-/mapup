@@ -64,8 +64,8 @@ app.get('/image', function(req, res) {
 
 //var server = http.createServer(app);
 var server = https.createServer({
-    key: fs.readFileSync('./secret-key.pem'),
-    cert: fs.readFileSync('./server.cert'),
+    key: fs.readFileSync('./certs/secret-key.pem'),
+    cert: fs.readFileSync('./certs/server.cert'),
     passphrase: '8c9bf1b4e1fb72f0d341f101f496813d21a21773',
 }, app);
 server.listen(app.get('port'), function() {
