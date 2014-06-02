@@ -2,9 +2,6 @@
 Mapup
 ===============
 
-Setup
---------------
-
 How to build (Develop)
 --------------
 
@@ -32,6 +29,5 @@ License
 --------------
 
 MIT License
-
 
 
