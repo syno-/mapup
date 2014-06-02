@@ -50,7 +50,7 @@ load
 
 cd $defaultPath
 pwd
-git submodule update --init
+git --git-dir=`pwd`/.git submodule update --init
 npm i
 npm i
 npm i --prefix SimpleWebRTC/
