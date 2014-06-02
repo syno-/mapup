@@ -27,15 +27,6 @@ module.exports = function(grunt) {
                     ]
                 },
             },
-            meetup: {
-                js: {
-                    out: 'meetup.js',
-                    //min: 'meetup.min.js',
-                    files: [
-                        'meetup.main.js',
-                    ]
-                },
-            },
             simplewebrtc: {
                 js: {
                     out: 'SimpleWebRTC/',
@@ -73,16 +64,6 @@ module.exports = function(grunt) {
                 })(),
                 dest: path.release.js + path.src.index.js.out,
             },
-            meetup: {
-                src: (function() {
-                    var list = [];
-                    path.src.meetup.js.files.forEach(function(file) {
-                        list.push(path.src.js + file);
-                    });
-                    return list;
-                })(),
-                dest: path.release.js + path.src.meetup.js.out,
-            },
         },
         uglify: {
 //            build: {
@@ -110,21 +91,11 @@ module.exports = function(grunt) {
                 files: (function() {
                     var r = {};
                     r[path.release.css + 'index.css'] = path.src.css + 'index.scss';
-                    r[path.release.css + 'meetup.css'] = path.src.css + 'meetup.scss';
                     return r;
                 })()
             }
         },
         copy: {
-            meetupjs: {
-                files: [{
-                    expand: true,
-                    flatten: true,
-                    src: ['meetup.js/release/**'],
-                    dest: 'public/libs/meetup.js/',
-                    filter: 'isFile'
-                }]
-            },
             simplewebrtc: {
                 files: [{
                     src: ['SimpleWebRTC/simplewebrtc.bundle.js'],
@@ -138,7 +109,6 @@ module.exports = function(grunt) {
                 files: [
                     'Gruntfile.js',
                     path.src.js + '**/*.js',
-                    'meetup.js/build/**/*.js',
                 ],
                 tasks: [
                     'jshint',
@@ -176,7 +146,6 @@ module.exports = function(grunt) {
                        'sass',
                        'concat',
                        //'uglify',
-                       'copy:meetupjs',
                        'copy:simplewebrtc',
     ]);
     grunt.registerTask('release', [
@@ -184,7 +153,6 @@ module.exports = function(grunt) {
                        'concat',
                        //'uglify',
                        'sass',
-                       'copy:meetupjs',
                        'copy:simplewebrtc',
     ]);
 };
