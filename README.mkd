@@ -2,7 +2,7 @@
 Mapup
 ===============
 
-How to build (Develop)
+How to build
 --------------
 
 ### Build requirement
@@ -17,6 +17,9 @@ This modules is ready, execute the line :
 
     $ ./load-dependencies.sh
 
+### Run
+
+    $ node app
 
 Browsers
 --------------
