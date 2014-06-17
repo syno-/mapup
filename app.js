@@ -74,8 +74,7 @@ server.listen(app.get('port'), function() {
 
 require('./show-addrs').show(app.get('port'));
 
-var socketIO = require('socket.io');
-var io = module.exports = socketIO.listen(server);
+var io = module.exports = require('socket.io')(server);
 var signalmaster = require('./signalmaster');
 
 /**
@@ -84,6 +83,7 @@ var signalmaster = require('./signalmaster');
 function getClients(roomClients) {
     var r = [];
     if (roomClients) {
+        console.log('roomClients=', roomClients);
         for (var socketId in roomClients) {
             if (roomClients.hasOwnProperty(socketId)) {
                 var client = roomClients[socketId];
@@ -103,13 +103,27 @@ function getClients(roomClients) {
     return r;
 }
 
+function findClientsSocketByRoomId() {
+    var res = [];
+    var rooms = io.sockets.adapter.rooms;
+    if (rooms) {
+        for (var id in rooms) if (rooms.hasOwnProperty(id)) {
+            res.push(io.sockets.adapter.nsp.connected[id]);
+        }
+    }
+    return res;
+}
+
 io.sockets.on('connection', function(socket) {
     console.log('connection, id=', socket.id);
     //console.log('connection, sockets=', io.sockets.sockets);
     signalmaster.connection.apply(this, arguments);
 
-    var clients = getClients(io.sockets.sockets);
-    socket.emit('user.list', clients);
+    //console.log('io.sockets.adapter.rooms', io.sockets.adapter.rooms);
+    console.log('io.sockets.adapter.rooms', findClientsSocketByRoomId());
+    // FIXME
+    //var clients = getClients(io.sockets.sockets);
+    //socket.emit('user.list', clients);
 
     socket.on('disconnect', function() {
         console.log('user.disconnect', arguments);
