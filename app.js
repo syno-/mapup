@@ -136,9 +136,10 @@ io.sockets.on('connection', function(socket) {
         });
     });
     socket.on('user.update', function(userdata) {
-        console.log('user.update');
+        console.log('on user.update', userdata);
 
         setData(userdata, function() {
+            console.log('emit user.update');
             io.sockets.emit('user.update', {
                 socketId: socket.id,
                 marker: userdata.marker,
@@ -191,16 +192,20 @@ io.sockets.on('connection', function(socket) {
         var maxProgress = list.length;
         list.forEach(function(prop, i) {
             if (userdata[prop] !== undefined) {
+                console.log('setData, prop=', prop);
                 socket.set(prop, userdata[prop], function () {
-                    console.log('setData', arguments);
+                    console.log('setData, set');
                     progress++;
                     if (maxProgress === progress) {
-                        console.log('setData', progress);
                         cb();
                     }
                 });
             } else {
+                console.log('setData, undefined prop=', prop);
                 progress++;
+                if (maxProgress === progress) {
+                    cb();
+                }
             }
         });
     }

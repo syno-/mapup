@@ -122,11 +122,6 @@ $.extend(Mps.prototype, {
                 self._users.push(user);
                 //Mps.log('接続方式: ' + _socket.socket.transport.name);
             } else {
-                // TODO: 自分自身が接続しなおしたとき。
-                //if (user.socketId === _socket.socket.transport.sessid) {
-                //    var updateUserdata = user.toUserdata();
-                //    self._socket.emit('user.update', updateUserdata);
-                //}
                 // 自分自身
                 //self.r.log.add('[' + userdata.socketId + '] 接続しました。');
                 Mps.log('addUser, 重複するユーザが検出されました。', userdata);
@@ -143,19 +138,24 @@ $.extend(Mps.prototype, {
             Mps.Geo.current().done(function(pos) {
                 Mps.log('detected: ', pos);
                 // TODO: 接続遅延があった時はself._userいなくてバグるかも
-                self._user.marker.latlng = {
-                    lat: pos.coords.latitude,
-                    lng: pos.coords.longitude,
-                };
-                self._map.setCenter(self._user.marker.latlng);
-                self._map.setZoom(13);
+                if (self._user) {
+                    var latlng = {
+                        lat: pos.coords.latitude,
+                        lng: pos.coords.longitude,
+                    };
+                    self._user.marker.latlng = latlng;
+                    self._map.setCenter(self._user.marker.latlng);
+                    self._map.setZoom(13);
+
+                    var data = {
+                        socketId: self._user.socketId,
+                        marker: latlng
+                    };
+                    self._socket.emit('user.update', data);
+                }
             }).fail(function(e) {
                 Mps.log('Geolocation: ' + e.message, e);
-                self._user.marker.latlng = {
-                    // Osaka
-                    lat: 34.701909,
-                    lng: 135.494977,
-                };
+                // TODO: 失敗した時は？
             }).always(function(e) {
                 //self.r.spin.hide();
             });
@@ -267,7 +267,7 @@ $.extend(Mps.prototype, {
         });
 
         _socket.on('user.update', function(userdata) {
-            Mps.log('user.update', userdata);
+            Mps.log('on user.update', userdata);
 
             var user = self.getUserBySocketId(userdata.socketId);
             if (user) {
@@ -290,6 +290,7 @@ $.extend(Mps.prototype, {
                 }
 
                 if (self._user === user) {
+                    Mps.log('on user.update, saved data');
                     self._user.save();
                 }
             }
@@ -456,6 +457,48 @@ $.extend(Mps.prototype, {
                 });
             }
         }
+
+        // Username
+        this.r.$formUsername.on('submit', function(e) {
+            e.preventDefault();
+
+            var $this = $(this);
+            var $username = $this.find('*[name="username"]');
+            var val = $username.val();
+            Mps.log('submit, username=' + val);
+
+            if (!self._user) {
+                return;
+            }
+            self._socket.emit('user.update', {
+                socketId: self._user.socketId,
+                username: val,
+            });
+        });
+
+        this.r.$formTags.on('submit', function(e) {
+            e.preventDefault();
+
+            var user = self._user;
+            if (!self._user) {
+                return;
+            }
+            var tag = self.r.$tagsInput.val();
+            self.r.$tagsInput.focus().val('');
+            if (user.tags.indexOf(tag) === -1) {
+                user.tags.push(tag);
+                user.save();
+                self.refreshTags(user);
+
+                // addedtagcallback
+                // update/delete時のサーバへの送信
+                self._socket.emit('user.update', {
+                    socketId: user.socketId,
+                    tags: user.tags,
+                });
+                self.r.$tagsInput.focus();
+            }
+        });
     },
     initMyself: function(user) {
         var self = this;
@@ -479,41 +522,6 @@ $.extend(Mps.prototype, {
         } else {
             Mps.log('  new myself');
         }
-
-        // Username
-        this.r.$formUsername.on('submit', function(e) {
-            e.preventDefault();
-
-            var $this = $(this);
-            var $username = $this.find('*[name="username"]');
-            var val = $username.val();
-            Mps.log('submit, username=' + val);
-
-            self._socket.emit('user.update', {
-                socketId: user.socketId,
-                username: val,
-            });
-        });
-
-        this.r.$formTags.on('submit', function(e) {
-            e.preventDefault();
-
-            var tag = self.r.$tagsInput.val();
-            self.r.$tagsInput.focus().val('');
-            if (user.tags.indexOf(tag) === -1) {
-                user.tags.push(tag);
-                user.save();
-                self.refreshTags(user);
-
-                // addedtagcallback
-                // update/delete時のサーバへの送信
-                self._socket.emit('user.update', {
-                    socketId: user.socketId,
-                    tags: user.tags,
-                });
-                self.r.$tagsInput.focus();
-            }
-        });
     },
     refreshTags: function(user) {
         var self = this;

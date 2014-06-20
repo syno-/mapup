@@ -167,6 +167,7 @@ Mps.User = (function() {
                 marker: {
                     latlng: this.marker.latlng,
                 },
+                imageName: this._imageName,
                 tags: this._tags,
             });
             localStorage.setItem('mps.user.myself', json);
