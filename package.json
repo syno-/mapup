@@ -12,7 +12,7 @@
     "mkdirp": "^0.5.0",
     "node-uuid": "~1.4.1",
     "node.extend": "^1.0.10",
-    "socket.io": "*",
+    "socket.io": "0.9.*",
     "yetify": "~0.1.0"
   },
   "devDependencies": {

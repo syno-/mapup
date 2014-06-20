@@ -128,9 +128,10 @@ io.sockets.on('connection', function(socket) {
      * }
      */
     socket.on('user.connect', function(userdata) {
-        console.log('user.connect, userdata=', userdata);
+        console.log('on user.connect, userdata=', userdata);
 
         setData(userdata, function() {
+            console.log('emit user.connect');
             io.sockets.emit('user.connect', userdata);
         });
     });
@@ -185,18 +186,21 @@ io.sockets.on('connection', function(socket) {
 
 
     function setData(userdata, cb) {
+        var list = ['username', 'marker', 'tags', 'imageName'];
         var progress = 0;
-        var maxProgress = 0;
-        ['username', 'marker', 'tags', 'imageName'].forEach(function(prop, i) {
+        var maxProgress = list.length;
+        list.forEach(function(prop, i) {
             if (userdata[prop] !== undefined) {
-                maxProgress++;
                 socket.set(prop, userdata[prop], function () {
                     console.log('setData', arguments);
                     progress++;
                     if (maxProgress === progress) {
+                        console.log('setData', progress);
                         cb();
                     }
                 });
+            } else {
+                progress++;
             }
         });
     }

@@ -51,6 +51,13 @@ $.extend(Mps.prototype, {
         Mps.log('socketio');
 
         this._socket = io.connect(location.protocol + '//' + location.host + '/');
+        if (Mps.DEBUG) {
+            var _emit = this._socket.emit;
+            this._socket.emit = function() {
+                Mps.log('emit, event=', arguments[0]);
+                _emit.apply(this, arguments);
+            };
+        }
     },
     initFinished: function() {
         var self = this;
@@ -89,21 +96,25 @@ $.extend(Mps.prototype, {
             var user = self.getUserBySocketId(userdata.socketId);
             if (!user) {
                 userdata.map = self._map;
-                user = createUser(userdata);
 
-                if (user.socketId === _socket.socket.transport.sessid) {
-                    if (self._user) {
-                        // 自分が既に存在する
+                if (userdata.socketId === _socket.socket.transport.sessid) {
+                    var saved = Mps.User.loadMyself();
+                    if (saved) {
+                        saved.socketId = userdata.socketId;
+                        saved.map = self._map;
+                        user = createUser(saved);
                     } else {
-                        self._user = user;
-                        onConnectedMyself(user);
-                        self.r.log.add('あなたのIDは' + user.socketId + 'です。');
+                        user = createUser(userdata);
                     }
+                    onConnectedMyself(user);
+                    self.r.log.add('あなたのIDは' + user.socketId + 'です。');
 
-                    var sendUserdata = user.toUserdata();
-                    Mps.log('addUser, add myelf: ', sendUserdata);
-                    self._socket.emit('user.connect', sendUserdata);
+                    var myUserdata = user.toUserdata();
+                    self._user = user;
+                    Mps.log('addUser, add myself: ', myUserdata);
+                    self._socket.emit('user.connect', myUserdata);
                 } else {
+                    user = createUser(userdata);
                     Mps.log('addUser, other');
                     self.r.log.add('ID[' + user.displayUsername() + '] さんが接続しました。');
                 }
@@ -161,6 +172,7 @@ $.extend(Mps.prototype, {
             if (idx >= 0) {
                 user.destroy();
                 if (user.socketId === _socket.socket.transport.sessid) {
+                    // self._user.save()は常に行っているのでしない
                     self._user = null;
                 }
                 self._users.splice(idx, 1);
@@ -235,9 +247,11 @@ $.extend(Mps.prototype, {
         });
 
         _socket.on('user.connect', function(userdata) {
-            Mps.log('user.connect', arguments);
+            Mps.log('on, user.connect', arguments);
 
-            addUser(userdata);
+            if (userdata.socketId !== _socket.socket.transport.sessid) {
+                addUser(userdata);
+            }
         });
         _socket.on('user.disconnect', function(connection) {
             console.log('user.disconnect', connection.id, self._users);
@@ -259,20 +273,20 @@ $.extend(Mps.prototype, {
             if (user) {
                 if (userdata.marker) {
                     user.marker.latlng = userdata.marker;
-                    //self.r.log.add('[' + user.displayUsername() + '] さんの位置が更新されました。');
+                    self.r.log.add('[' + user.displayUsername() + '] さんの位置が更新されました。');
                 }
                 if (userdata.username) {
                     user.username = userdata.username;
-                    //self.r.log.add('[' + user.displayUsername() + '] さんの名前が' + userdata.username + 'に更新されました。');
+                    self.r.log.add('[' + user.displayUsername() + '] さんの名前が' + userdata.username + 'に更新されました。');
                 }
                 if (userdata.tags) {
                     user.tags = userdata.tags;
-                    //self.r.log.add('[' + user.displayUsername() + '] さんのタグが修正されました。');
+                    self.r.log.add('[' + user.displayUsername() + '] さんのタグが修正されました。');
                     self.refreshTagList();
                 }
                 if (userdata.imageName) {
                     user.imageName = userdata.imageName;
-                    //self.r.log.add('[' + user.displayUsername() + '] さんの画像が修正されました。');
+                    self.r.log.add('[' + user.displayUsername() + '] さんの画像が修正されました。');
                 }
 
                 if (self._user === user) {

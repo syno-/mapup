@@ -49,6 +49,7 @@ Mps.Geo = (function() {
         }
 
         if (navigator.geolocation) {
+            Mps.log('geolocation, request');
             navigator.geolocation.getCurrentPosition(function(pos) {
                 Mps.log('success');
                 d.resolve.call(d, pos);
