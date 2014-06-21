@@ -13,7 +13,7 @@ Mps.rtc = (function() {
 
             var self = this;
             this._isReadyToCall = false;
-            this._mute = true;
+            this._mute = false;
             this._videoEnabled = true;
             var rtc = this._webrtc = new SimpleWebRTC({
                 //url: 'http://syno.in:8887',
@@ -21,6 +21,7 @@ Mps.rtc = (function() {
                 localVideoEl: 'localVideo',
                 remoteVideosEl: 'remoteVideos',
                 autoRequestMedia: true,
+                autoAdjustMic: true,
                 media: {
                     video: {
                         mandatory: {
@@ -30,7 +31,7 @@ Mps.rtc = (function() {
                             maxFrameRate: 8
                         }
                     },
-                    audio: false
+                    audio: true
                 },
             });
             rtc.on('readyToCall', function (e) {
@@ -41,16 +42,17 @@ Mps.rtc = (function() {
             rtc.on('joinedRoom', function () {
                 Mps.log('RTC, joinedRoom');
                 rtc.sendDirectlyToAll("text chat", "chat", ""); // omajinai
+                rtc.mute();
                 self.emit('joinedRoom', arguments);
             });
             rtc.on('audioOff', function (event) {
                 Mps.log('RTC, audioOff');
-                self._mute = false;
+                self._mute = true;
                 self.emit('audio.mute', [event, self._mute]);
             });
             rtc.on('audioOn', function (event) {
                 Mps.log('RTC, audioOn');
-                self._mute = true;
+                self._mute = false;
                 self.emit('audio.mute', [event, self._mute]);
             });
 
@@ -69,8 +71,24 @@ Mps.rtc = (function() {
         isVideoEnabled: function() {
             return this._videoEnabled;
         },
+        setVideoEnabled: function(is) {
+            Mps.log('setVideoEnabled, is=', is);
+            if (is) {
+                this._webrtc.resumeVideo();
+            } else {
+                this._webrtc.pauseVideo();
+            }
+        },
         isMuted: function() {
             return this._mute;
+        },
+        setMuted: function(is) {
+            Mps.log('setMuted, is=', is);
+            if (is) {
+                this._webrtc.mute();
+            } else {
+                this._webrtc.unmute();
+            }
         },
         getRTC: function() {
             return this._webrtc;

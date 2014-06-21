@@ -192,11 +192,16 @@ Mps.Dialog = (function() {
                 this._users = [];
 
                 var self = this;
+                var rtc = Mps.rtc();
                 this.$title = this._$.find('#rtc-title');
                 this.$selfUsername = this._$.find('#rtc-self-username');
                 this.$btnMute = this._$.find('#rtc-btn-mute').click(function(e) {
+                    $(this).attr('disabled', 'disabled');
+                    rtc.setMuted(!rtc.isMuted());
                 });
                 this.$btnVideo = this._$.find('#rtc-btn-video').click(function(e) {
+                    $(this).attr('disabled', 'disabled');
+                    rtc.setVideoEnabled(!rtc.isVideoEnabled());
                 });
                 this.log = new Mps.Log('rtc-chat-log');
                 this.$chatForm = this._$.find('#rtc-chat-form').submit(function(e) {
@@ -205,7 +210,7 @@ Mps.Dialog = (function() {
                     var val = self.$chatInput.val();
                     self.$chatInput.val('').focus();
 
-                    var webrtc = Mps.rtc().getRTC();
+                    var webrtc = rtc.getRTC();
                     var o = {
                         name: self._self.displayUsername(),
                         imageUrl: self._self.getImageUrl(),
@@ -217,11 +222,9 @@ Mps.Dialog = (function() {
                 });
                 this.$chatInput = this.$chatForm.find('input');
 
-                this.setMute(true);
-                this.setVideoEnabled(true);
-
                 this._$.on('hide.bs.modal', function(e) {
                     self.log.clear();
+                    var webrtc = Mps.rtc().getRTC();
                     webrtc.leaveRoom();
                 });
             },
@@ -265,16 +268,15 @@ Mps.Dialog = (function() {
                     btn.addClass('btn btn-default');
                     icon.addClass('glyphicon glyphicon-volume-up');
                 }
-                this._mute = is;
             },
             setVideoEnabled: function(is) {
                 var btn = this.$btnVideo.removeClass();
                 var icon = btn.children().removeClass();
                 if (is) {
-                    btn.addClass('btn btn-danger');
+                    btn.addClass('btn btn-default');
                     icon.addClass('glyphicon glyphicon-facetime-video');
                 } else {
-                    btn.addClass('btn btn-default');
+                    btn.addClass('btn btn-danger');
                     icon.addClass('glyphicon glyphicon-facetime-video');
                 }
                 this._videoEnabled = is;
@@ -298,9 +300,11 @@ Mps.Dialog = (function() {
                 rtc.on('audio.mute', function(e, isMuted) {
                     console.log('audio.mute, isMuted=', isMuted);
                     self.setMute(isMuted);
+                    self.$btnMute.removeAttr('disabled');
                 }).on('video', function(e, isEnabled) {
                     console.log('video, isEnabled=', isEnabled);
                     self.setVideoEnabled(isEnabled);
+                    self.$btnVideo.removeAttr('disabled');
                 }).on('joinedRoom', function() {
                 });
 
