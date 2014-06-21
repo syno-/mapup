@@ -147,6 +147,7 @@ io.sockets.on('connection', function(socket) {
                 username: userdata.username,
                 imageName: userdata.imageName,
                 tags: userdata.tags,
+                roomId: userdata.roomId,
             });
         });
     });
@@ -177,7 +178,9 @@ io.sockets.on('connection', function(socket) {
         var to = invite.to;
 
         // roomIdの生成
-        invite.roomId = createRoomId(from, to);
+        if (!invite.roomId) {
+            invite.roomId = createRoomId(from, to);
+        }
 
         io.sockets.socket(to.socketId).emit('user.invite', invite);
     });
@@ -206,7 +209,7 @@ io.sockets.on('connection', function(socket) {
     }
 
     function setData(userdata, cb) {
-        var list = ['username', 'marker', 'tags', 'imageName'];
+        var list = ['username', 'marker', 'tags', 'imageName', 'roomId'];
         var progress = 0;
         var maxProgress = list.length;
         list.forEach(function(prop, i) {

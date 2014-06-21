@@ -288,6 +288,15 @@ $.extend(Mps.prototype, {
                     user.imageName = userdata.imageName;
                     self.r.log.add('[' + user.displayUsername() + '] さんの画像が修正されました。');
                 }
+                if (userdata.roomId) {
+                    user.roomId = userdata.roomId;
+                    self.r.log.add('[' + user.displayUsername() + '] さんが会話を開始しました。');
+                } else if (userdata.roomId === null && user.roomId) {
+                    user.roomId = null;
+                    self.r.log.add('[' + user.displayUsername() + '] さんが会話を終了しました。');
+                } else {
+                    user.roomId = null;
+                }
 
                 if (self._user === user) {
                     Mps.log('on user.update, saved data');
@@ -321,6 +330,12 @@ $.extend(Mps.prototype, {
             if (invite.to.agreed && invite.roomId) {
                 self._user.roomId = invite.roomId;
                 Mps.log('user.invited, startCall', invite.roomId);
+
+                // roomIdをbroadcast
+                self._socket.emit('user.update', {
+                    socketId: self._user.socketId,
+                    roomId: invite.roomId
+                });
                 startCall(invite.to.socketId, invite.roomId);
             }
 
@@ -345,6 +360,12 @@ $.extend(Mps.prototype, {
                 from: invite.to
             });
             self._user.roomId = invite.roomId;
+
+            // roomIdをbroadcast
+            self._socket.emit('user.update', {
+                socketId: self._user.socketId,
+                roomId: invite.roomId
+            });
             startCall(invite.from.socketId, invite.roomId);
         }).on('invite.disagree', function(e) {
             var invite = this.invite;
@@ -359,7 +380,11 @@ $.extend(Mps.prototype, {
             });
         });
         Mps.Dialog('rtc').on('leftRoom', function(roomId) {
-            self._user.roomId = null;
+            //self._user.roomId = null;
+            self._socket.emit('user.update', {
+                socketId: self._user.socketId,
+                roomId: null,
+            });
         });
 
         this.r.$socketDisconnect.click(function(e) {
@@ -393,7 +418,9 @@ $.extend(Mps.prototype, {
                         });
                     },
                 });
-                self._socket.emit('user.invite', {
+
+                // 招待送信
+                var inviteData = {
                     to: {
                         socketId: socketId,
                         state: 'request',
@@ -402,7 +429,11 @@ $.extend(Mps.prototype, {
                         socketId: self._user.socketId,
                         username: self._user.username,
                     },
-                });
+                };
+                if (user.roomId) {
+                    inviteData.roomId = user.roomId;
+                }
+                self._socket.emit('user.invite', inviteData);
 
                 if (user.infoWindow) {
                     user.infoWindow.close();
