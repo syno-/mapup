@@ -223,9 +223,9 @@ Mps.Dialog = (function() {
                 this.$chatInput = this.$chatForm.find('input');
 
                 this._$.on('hide.bs.modal', function(e) {
-                    self.log.clear();
                     var webrtc = Mps.rtc().getRTC();
                     webrtc.leaveRoom();
+                    self.end();
                 });
             },
             /** レイアウト作るためのやつ。消す。 */
@@ -254,6 +254,8 @@ Mps.Dialog = (function() {
                 this.show();
             },
             end: function() {
+                this.log.clear();
+                this._users = [];
             },
             removeUser: function(user) {
                 // TODO
@@ -306,6 +308,8 @@ Mps.Dialog = (function() {
                     self.setVideoEnabled(isEnabled);
                     self.$btnVideo.removeAttr('disabled');
                 }).on('joinedRoom', function() {
+                }).on('leftRoom', function(roomId) {
+                    self.emit('leftRoom', [roomId]);
                 });
 
                 webrtc.on('channelMessage', function (peer, label, data, ch, ev) {
@@ -363,6 +367,7 @@ Mps.Dialog = (function() {
             init: function(dlgId) {
                 this._super.apply(this, arguments);
                 var self = this;
+                this.invite = null;
                 this._isAgreed = false;
                 var $agree = $('#invite-agree').click(function(e) {
                     Mps.log('invite, agree');
@@ -381,6 +386,7 @@ Mps.Dialog = (function() {
                     } else {
                         self.emit('invite.disagree', [e]);
                     }
+                    self._isAgreed = false;
                 });
                 this.$title = $('#invite-title');
             },

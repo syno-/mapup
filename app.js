@@ -13,6 +13,7 @@ var path = require('path');
 var mod = {
     image: require('./image.upload'),
 };
+var crypto = require('crypto');
 
 require('colors');
 
@@ -175,16 +176,34 @@ io.sockets.on('connection', function(socket) {
         var from = invite.from;
         var to = invite.to;
 
+        // roomIdの生成
+        invite.roomId = createRoomId(from, to);
+
         io.sockets.socket(to.socketId).emit('user.invite', invite);
     });
-    socket.on('user.invited', function(invited) {
-        console.log('user.invited', invited);
-        var to = invited.to;
-        var from = invited.from;
+    socket.on('user.invited', function(invite) {
+        console.log('user.invited', invite);
+        var to = invite.to;
+        var from = invite.from;
 
-        io.sockets.socket(to.socketId).emit('user.invited', invited);
+        io.sockets.socket(to.socketId).emit('user.invited', invite);
     });
 
+    function createRoomId(from, to) {
+        var base = from.socketId + ':' +
+            to.socketId + ':' +
+            Date.now() +
+            ':mapup'; // salt
+
+        console.log('createRoomId, base=', base);
+        var sha1sum = crypto.createHash('sha1');
+        sha1sum.update(base);
+
+        var shasum = sha1sum.digest('hex');
+        console.log('createRoomId, shasum=', shasum);
+
+        return shasum;
+    }
 
     function setData(userdata, cb) {
         var list = ['username', 'marker', 'tags', 'imageName'];

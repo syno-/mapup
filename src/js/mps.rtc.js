@@ -45,6 +45,12 @@ Mps.rtc = (function() {
                 rtc.mute();
                 self.emit('joinedRoom', arguments);
             });
+            rtc.on('leftRoom', function (roomId) {
+                Mps.log('RTC, joinedRoom');
+                rtc.sendDirectlyToAll("text chat", "chat", ""); // omajinai
+                rtc.mute();
+                self.emit('leftRoom', [roomId]);
+            });
             rtc.on('audioOff', function (event) {
                 Mps.log('RTC, audioOff');
                 self._mute = true;

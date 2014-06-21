@@ -48,7 +48,7 @@ module.exports = function(grunt) {
             options: {
                 ignores: [path.src.js + 'mps.begin.js'],
             },
-            all: ['Gruntfile.js', path.src.js + '**/*.js']
+            all: ['Gruntfile.js', 'app.js', path.src.js + '**/*.js']
         },
         concat: {
             options: {
@@ -108,6 +108,7 @@ module.exports = function(grunt) {
             scripts: {
                 files: [
                     'Gruntfile.js',
+                    'app.js',
                     path.src.js + '**/*.js',
                 ],
                 tasks: [

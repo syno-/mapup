@@ -52,6 +52,10 @@ Mps.User = (function() {
                     value: null,
                     writable: true
                 },
+                "roomId": {
+                    value: null,
+                    writable: true
+                },
                 /**
                  * 自分自身かどうか。
                  * ドラッグの判定や、地図のピンの色へ影響。

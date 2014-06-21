@@ -300,32 +300,15 @@ $.extend(Mps.prototype, {
 
             var to = invite.to;
             var from = invite.from;
+            Mps.log('user.invite, roomId=', invite.roomId);
 
             var dlg = Mps.Dialog('invite');
             if (to.state === 'request') {
                 // 招待されましたダイアログを表示
                 var user = self.getUserBySocketId(from.socketId);
                 dlg.user(user);
-                dlg.on('invite.agree', function(e) {
-                    Mps.log('invite.agree', arguments);
-                    self._socket.emit('user.invited', {
-                        to: {
-                            socketId: from.socketId,
-                            agreed: true,
-                        },
-                        from: to
-                    });
-                    startCall(invite.from.socketId);
-                }).on('invite.disagree', function(e) {
-                    Mps.log('invite.disagree', arguments);
-                    self._socket.emit('user.invited', {
-                        to: {
-                            socketId: from.socketId,
-                            agreed: false,
-                        },
-                        from: to
-                    });
-                }).show();
+                dlg.invite = invite;
+                dlg.show();
             } else if (to.state === 'cancel') {
                 dlg.hide();
             } else {
@@ -333,21 +316,51 @@ $.extend(Mps.prototype, {
             }
         });
         _socket.on('user.invited', function(invite) {
-            Mps.log('user.invited', arguments);
+            Mps.log('user.invited', invite);
 
-            if (invite.to.agreed) {
-                startCall(invite.to.socketId);
+            if (invite.to.agreed && invite.roomId) {
+                self._user.roomId = invite.roomId;
+                Mps.log('user.invited, startCall', invite.roomId);
+                startCall(invite.to.socketId, invite.roomId);
             }
 
             Mps.Dialog('alert').hide();
         });
 
-        function startCall(socketId) {
+        function startCall(socketId, roomId) {
             var user = self.getUserBySocketId(socketId);
             if (user && self._user) {
-                Mps.Dialog('rtc').setSelf(self._user).addUser(user).begin(socketId);
+                Mps.Dialog('rtc').setSelf(self._user).addUser(user).begin(roomId);
             }
         }
+        Mps.Dialog('invite').on('invite.agree', function(e) {
+            var invite = this.invite;
+            Mps.log('invite.agree', arguments);
+            self._socket.emit('user.invited', {
+                roomId: invite.roomId,
+                to: {
+                    socketId: invite.from.socketId,
+                    agreed: true,
+                },
+                from: invite.to
+            });
+            self._user.roomId = invite.roomId;
+            startCall(invite.from.socketId, invite.roomId);
+        }).on('invite.disagree', function(e) {
+            var invite = this.invite;
+            Mps.log('invite.disagree', arguments);
+            self._socket.emit('user.invited', {
+                roomId: invite.roomId,
+                to: {
+                    socketId: invite.from.socketId,
+                    agreed: false,
+                },
+                from: invite.to
+            });
+        });
+        Mps.Dialog('rtc').on('leftRoom', function(roomId) {
+            self._user.roomId = null;
+        });
 
         this.r.$socketDisconnect.click(function(e) {
             _socket.disconnect();
@@ -390,6 +403,10 @@ $.extend(Mps.prototype, {
                         username: self._user.username,
                     },
                 });
+
+                if (user.infoWindow) {
+                    user.infoWindow.close();
+                }
             }
         };
 
