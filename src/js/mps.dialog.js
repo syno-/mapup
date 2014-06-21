@@ -194,8 +194,10 @@ Mps.Dialog = (function() {
                 var self = this;
                 this.$title = this._$.find('#rtc-title');
                 this.$selfUsername = this._$.find('#rtc-self-username');
-                this.$btnMute = this._$.find('#rtc-btn-mute');
-                this.$btnVideo = this._$.find('#rtc-btn-video');
+                this.$btnMute = this._$.find('#rtc-btn-mute').click(function(e) {
+                });
+                this.$btnVideo = this._$.find('#rtc-btn-video').click(function(e) {
+                });
                 this.log = new Mps.Log('rtc-chat-log');
                 this.$chatForm = this._$.find('#rtc-chat-form').submit(function(e) {
                     e.preventDefault();
@@ -203,7 +205,7 @@ Mps.Dialog = (function() {
                     var val = self.$chatInput.val();
                     self.$chatInput.val('').focus();
 
-                    var webrtc = Mps.rtc.get().getRTC();
+                    var webrtc = Mps.rtc().getRTC();
                     var o = {
                         name: self._self.displayUsername(),
                         imageUrl: self._self.getImageUrl(),
@@ -217,6 +219,11 @@ Mps.Dialog = (function() {
 
                 this.setMute(true);
                 this.setVideoEnabled(true);
+
+                this._$.on('hide.bs.modal', function(e) {
+                    self.log.clear();
+                    webrtc.leaveRoom();
+                });
             },
             /** レイアウト作るためのやつ。消す。 */
             test: function() {
@@ -274,18 +281,32 @@ Mps.Dialog = (function() {
             },
             initSimpleWebRTC: function(socketId) {
                 var self = this;
-                var rtc = Mps.rtc.get();
+                var rtc = Mps.rtc();
                 var webrtc = rtc.getRTC();
-                webrtc.on('readyToCall', function () {
-                    Mps.log('initSimpleWebRTC', socketId);
+
+                this.setMute(rtc.isMuted());
+                this.setVideoEnabled(rtc.isVideoEnabled());
+
+                if (rtc.isReadyToCall()) {
+                    // TODO: RoomIdどうする？
                     webrtc.joinRoom(socketId);
+                } else {
+                    rtc.on('readyToCall', function(e) {
+                        webrtc.joinRoom(socketId);
+                    });
+                }
+                rtc.on('audio.mute', function(e, isMuted) {
+                    console.log('audio.mute, isMuted=', isMuted);
+                    self.setMute(isMuted);
+                }).on('video', function(e, isEnabled) {
+                    console.log('video, isEnabled=', isEnabled);
+                    self.setVideoEnabled(isEnabled);
+                }).on('joinedRoom', function() {
                 });
-                webrtc.on('joinedRoom', function () {
-                    webrtc.sendDirectlyToAll("text chat", "chat", ""); // omajinai
-                });
+
                 webrtc.on('channelMessage', function (peer, label, data, ch, ev) {
                     if (label == 'text chat' && data.type == 'chat') {
-                        Mps.log('channelMessage');
+                        Mps.log('initSimpleWebRTC, channelMessage');
                         try {
                             var json = JSON.parse(data.payload);
                             self.log.push(json);
@@ -294,46 +315,7 @@ Mps.Dialog = (function() {
                         }
                     }
                 });
-                this._$.on('hide.bs.modal', function(e) {
-                    webrtc.leaveRoom();
-                });
-
-                // audio
-                this._mute = true;
-                this.setMute(this._mute);
-                webrtc.on('audioOff', function (event) {
-                    self.setMute(true);
-                });
-                webrtc.on('audioOn', function (event) {
-                    self.setMute(false);
-                });
-
-                // video
-                this._videoEnabled = true;
-                this.setVideoEnabled(this._videoEnabled);
-                webrtc.on('videoOff', function (event) {
-                    self.setVideoEnabled(false);
-                });
-                webrtc.on('videoOn', function (event) {
-                    self.setVideoEnabled(true);
-                });
             },
-            ///**
-            // * @param {HTMLElement} _text
-            // */
-            //sendChat: function(_text) {
-            //    //var context = document.getElementById("snap").getContext("2d");
-            //    //context.beginPath();
-            //    //context.rect(15, 0, 90, 90);
-            //    //context.clip();
-            //    //context.drawImage(document.getElementById("localVideo"),0, 0, 120, 90);
-            //    //var snap = document.getElementById("snap").toDataURL();
-            //    //var html = '<div class=chatText><img width="60" src="' + snap + '">' + _text.value + '</div>';
-            //    var webrtc = Mps.rtc.get().getRTC();
-            //    webrtc.sendDirectlyToAll("text chat", "chat", html);
-            //    //document.getElementById("chatLog").innerHTML += html;
-            //    //_text.value = '';
-            //},
         }),
         alert: DialogProto.extend({
             init: function(dlgId) {
