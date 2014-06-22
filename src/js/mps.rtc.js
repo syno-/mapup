@@ -15,6 +15,7 @@ Mps.rtc = (function() {
             this._isReadyToCall = false;
             this._mute = false;
             this._videoEnabled = true;
+            this._isLocalVideoEnabled = true;
             var rtc = this._webrtc = new SimpleWebRTC({
                 //url: 'http://syno.in:8887',
                 url: location.origin,
@@ -39,16 +40,13 @@ Mps.rtc = (function() {
                 self._isReadyToCall = true;
                 self.emit('readyToCall', arguments);
             });
-            rtc.on('joinedRoom', function () {
-                Mps.log('RTC, joinedRoom');
-                rtc.sendDirectlyToAll("text chat", "chat", ""); // omajinai
+            rtc.on('joinedRoom', function (roomId) {
+                Mps.log('RTC, joinedRoom', arguments);
                 rtc.mute();
                 self.emit('joinedRoom', arguments);
             });
             rtc.on('leftRoom', function (roomId) {
-                Mps.log('RTC, joinedRoom');
-                rtc.sendDirectlyToAll("text chat", "chat", ""); // omajinai
-                rtc.mute();
+                Mps.log('RTC, leftRoom');
                 self.emit('leftRoom', [roomId]);
             });
             rtc.on('audioOff', function (event) {
@@ -61,7 +59,6 @@ Mps.rtc = (function() {
                 self._mute = false;
                 self.emit('audio.mute', [event, self._mute]);
             });
-
             rtc.on('videoOff', function (event, isEnabled) {
                 self._videoEnabled = false;
                 self.emit('video', [event, self._videoEnabled]);
@@ -70,10 +67,33 @@ Mps.rtc = (function() {
                 self._videoEnabled = true;
                 self.emit('video', [event, self._videoEnabled]);
             });
+
+            rtc.on('channelMessage', function (peer, channelLabel, data, ch, ev) {
+                self.emit('channelMessage', [peer, channelLabel, data, ch, ev]);
+            });
+            //rtc.on('localScreenStopped', function (stream) {
+            //    self.emit('localScreenStopped', [stream]);
+            //});
         },
         isReadyToCall: function() {
             return this._isReadyToCall;
         },
+        //isLocalVideoEnabled: function() {
+        //    return this._isLocalVideoEnabled;
+        //},
+        //setLocalVideoEnabled: function(is) {
+        //    Mps.log('setLocalVideoEnabled, is=', is);
+        //    if (is === this._isLocalVideoEnabled) {
+        //        // 同じ場合何もしない
+        //        return;
+        //    }
+        //    if (is) {
+        //        this._webrtc.startLocalVideo();
+        //    } else {
+        //        this._webrtc.stopLocalVideo();
+        //    }
+        //    this._isLocalVideoEnabled = is;
+        //},
         isVideoEnabled: function() {
             return this._videoEnabled;
         },

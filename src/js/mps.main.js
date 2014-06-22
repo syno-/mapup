@@ -94,50 +94,50 @@ $.extend(Mps.prototype, {
         function addUser(userdata) {
             Mps.log('addUser, userdata=', userdata);
             var user = self.getUserBySocketId(userdata.socketId);
-            if (!user) {
-                userdata.map = self._map;
+            if (user) {
+                user.destroy();
+                user = null;
+            }
+            userdata.map = self._map;
 
-                if (userdata.socketId === _socket.socket.transport.sessid) {
-                    var saved = Mps.User.loadMyself();
-                    if (saved) {
-                        saved.socketId = userdata.socketId;
-                        saved.map = self._map;
-                        user = createUser(saved);
-                    } else {
-                        user = createUser(userdata);
-                    }
-                    onConnectedMyself(user);
-                    self.r.log.add('あなたのIDは' + user.socketId + 'です。');
-
-                    var myUserdata = user.toUserdata();
-                    self._user = user;
-                    Mps.log('addUser, add myself: ', myUserdata);
-                    self._socket.emit('user.connect', myUserdata);
+            if (userdata.socketId === _socket.socket.transport.sessid) {
+                var saved = Mps.User.loadMyself();
+                if (saved) {
+                    saved.socketId = userdata.socketId;
+                    saved.map = self._map;
+                    user = createUser(saved);
                 } else {
                     user = createUser(userdata);
-                    Mps.log('addUser, other');
-                    self.r.log.add('ID[' + user.displayUsername() + '] さんが接続しました。');
                 }
+                self.initMyself(user);
+                if (!user.marker.latlng) {
+                    reqGeo(user);
+                } else {
+                    // 再接続の時
+                }
+                self.r.log.add('あなたのIDは' + user.socketId + 'です。');
 
-                self._users.push(user);
-                //Mps.log('接続方式: ' + _socket.socket.transport.name);
+                var myUserdata = user.toUserdata();
+                self._user = user;
+                Mps.log('addUser, add myself: ', myUserdata);
+                self._socket.emit('user.connect', myUserdata);
             } else {
-                // 自分自身
-                //self.r.log.add('[' + userdata.socketId + '] 接続しました。');
-                Mps.log('addUser, 重複するユーザが検出されました。', userdata);
+                user = createUser(userdata);
+                Mps.log('addUser, other');
+                self.r.log.add('ID[' + user.displayUsername() + '] さんが接続しました。');
             }
+
+            self._users.push(user);
+            //Mps.log('接続方式: ' + _socket.socket.transport.name);
 
             return user;
         }
 
-        function onConnectedMyself(user) {
-            self.initMyself(user);
-
+        function reqGeo(user) {
             // Start detect location
             //self.r.spin.show();
             Mps.Geo.current().done(function(pos) {
                 Mps.log('detected: ', pos);
-                // TODO: 接続遅延があった時はself._userいなくてバグるかも
                 if (self._user) {
                     var latlng = {
                         lat: pos.coords.latitude,
@@ -381,9 +381,9 @@ $.extend(Mps.prototype, {
         });
         Mps.Dialog('rtc').on('leftRoom', function(roomId) {
             //self._user.roomId = null;
-            self._socket.emit('user.update', {
+            self._socket.emit('user.leftRoom', {
                 socketId: self._user.socketId,
-                roomId: null,
+                roomId: roomId,
             });
         });
 
@@ -564,7 +564,7 @@ $.extend(Mps.prototype, {
         var saved = Mps.User.loadMyself();
         if (saved) {
             Mps.log('  Restore myself');
-            user.marker.latlng = saved.marker.latlng;
+            user.marker.latlng = saved.marker;
             user.username = saved.username;
             user.tags = saved.tags;
         } else {

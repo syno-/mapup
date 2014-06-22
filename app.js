@@ -185,11 +185,43 @@ io.sockets.on('connection', function(socket) {
         io.sockets.socket(to.socketId).emit('user.invite', invite);
     });
     socket.on('user.invited', function(invite) {
-        console.log('user.invited', invite);
         var to = invite.to;
         var from = invite.from;
+        if (!invite.roomId || !to || !from) {
+            console.log('INVALID: user.invited', invite);
+            return;
+        }
+        console.log('user.invited', invite);
 
-        io.sockets.socket(to.socketId).emit('user.invited', invite);
+        [io.sockets.socket(to.socketId), io.sockets.socket(from.socketId)]
+        .forEach(function(socket) {
+            if (socket) {
+                console.log('join roomId=', invite.roomId);
+                socket.join(invite.roomId);
+            }
+        });
+
+        console.log('io.sockets', io.sockets);
+        var room = io.sockets.to(invite.roomId);
+        console.log('room=', room);
+        room.emit('user.invited', invite);
+    });
+    socket.on('user.leftRoom', function(userdata) {
+        if (!userdata.socketId && !userdata.roomId) {
+            console.log('INVALID: user.leftRoom', userdata);
+            return;
+        }
+
+        // ルームから退出する
+        var client = io.sockets.socket(userdata.socketId);
+        console.log('join roomId=', userdata.roomId);
+        client.leave(userdata.roomId);
+
+        userdata.roomId = null;
+        setData(userdata, function() {
+            console.log('emit user.update');
+            io.sockets.emit('user.update', userdata);
+        });
     });
 
     function createRoomId(from, to) {
