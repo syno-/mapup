@@ -235,6 +235,13 @@ $.extend(Mps.prototype, {
             if (self._users.length === 0) {
             }
         });
+        _socket.on('disconnect', function(data) {
+            Mps.log('disconnect', arguments);
+            if (self._requireReconnect) {
+                self._requireReconnect = false;
+                _socket.socket.reconnect();
+            }
+        });
 
         _socket.on('user.list', function(userdataList) {
             Mps.log('user.list', arguments);
@@ -380,15 +387,22 @@ $.extend(Mps.prototype, {
             });
         });
         Mps.Dialog('rtc').on('leftRoom', function(roomId) {
+            Mps.log('leftRoom, disconnect');
+
+            // A-B-Cの３人で接続した後、A,Bが抜けて、A,Cが接続を行うと、
+            // Bが入ってきて３人通話に戻ってしまう不具合がある。(SimpleWebRTCの仕様？理由が謎)
+            // それを回避するため、完全に一度ソケット接続をしなおして状態をリセットするようにする。
             //self._user.roomId = null;
-            self._socket.emit('user.leftRoom', {
-                socketId: self._user.socketId,
-                roomId: roomId,
-            });
+            //self._socket.emit('user.leftRoom', {
+            //    socketId: self._user.socketId,
+            //    roomId: roomId,
+            //});
+            self._requireReconnect = true;
+            self._socket.disconnect();
         });
 
         this.r.$socketDisconnect.click(function(e) {
-            _socket.disconnect();
+            self._socket.disconnect();
         });
 
         this.r.$btnFold.click(function(e) {

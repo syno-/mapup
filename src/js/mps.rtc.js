@@ -121,11 +121,16 @@ Mps.rtc = (function() {
         }
     });
 
-    return function() {
+    var f = function() {
         if (!instance) {
             instance = new MyRTC();
         }
 
         return instance;
     };
+    f.clear = function() {
+        instance = null;
+    };
+
+    return f;
 })();

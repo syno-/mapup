@@ -7,8 +7,9 @@ body {
         height: 100%;
 
         .infowindow {
-            width: 200px;
-            height: 100px;
+            width: 220px;
+            height: 140px;
+            overflow: auto;
         }
     }
 
