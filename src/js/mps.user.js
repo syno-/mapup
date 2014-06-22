@@ -52,6 +52,10 @@ Mps.User = (function() {
                     value: null,
                     writable: true
                 },
+                "roomId": {
+                    value: null,
+                    writable: true
+                },
                 /**
                  * 自分自身かどうか。
                  * ドラッグの判定や、地図のピンの色へ影響。
@@ -162,15 +166,12 @@ Mps.User = (function() {
             Mps.log('user destroy:', this.toUserdata());
         },
         save: function() {
-            var json = JSON.stringify({
+            User.saveMyself({
                 username: this.username,
-                marker: {
-                    latlng: this.marker.latlng,
-                },
+                marker: this.marker.latlng,
+                imageName: this._imageName,
                 tags: this._tags,
             });
-            localStorage.setItem('mps.user.myself', json);
-            Mps.log('Saved myself: json=', json);
         },
         displayUsername: function() {
             var name;
@@ -232,6 +233,24 @@ Mps.User = (function() {
         }
         return item;
     };
+
+    /**
+     *
+     */
+    User.saveMyself = function(object) {
+        var json = JSON.stringify(object);
+        localStorage.setItem('mps.user.myself', json);
+        Mps.log('Saved myself: json=', json);
+    };
+
+    // ページ読み込み時に位置情報削除しておき、再取得を促す
+    (function() {
+        var data = User.loadMyself();
+        if (data.marker) {
+            data.marker = null;
+            User.saveMyself(data);
+        }
+    })();
 
     return User;
 })();

@@ -13,6 +13,7 @@ var path = require('path');
 var mod = {
     image: require('./image.upload'),
 };
+var crypto = require('crypto');
 
 require('colors');
 
@@ -128,22 +129,25 @@ io.sockets.on('connection', function(socket) {
      * }
      */
     socket.on('user.connect', function(userdata) {
-        console.log('user.connect, userdata=', userdata);
+        console.log('on user.connect, userdata=', userdata);
 
         setData(userdata, function() {
+            console.log('emit user.connect');
             io.sockets.emit('user.connect', userdata);
         });
     });
     socket.on('user.update', function(userdata) {
-        console.log('user.update');
+        console.log('on user.update', userdata);
 
         setData(userdata, function() {
+            console.log('emit user.update');
             io.sockets.emit('user.update', {
                 socketId: socket.id,
                 marker: userdata.marker,
                 username: userdata.username,
                 imageName: userdata.imageName,
                 tags: userdata.tags,
+                roomId: userdata.roomId,
             });
         });
     });
@@ -173,30 +177,89 @@ io.sockets.on('connection', function(socket) {
         var from = invite.from;
         var to = invite.to;
 
+        // roomIdの生成
+        if (!invite.roomId) {
+            invite.roomId = createRoomId(from, to);
+        }
+
         io.sockets.socket(to.socketId).emit('user.invite', invite);
     });
-    socket.on('user.invited', function(invited) {
-        console.log('user.invited', invited);
-        var to = invited.to;
-        var from = invited.from;
+    socket.on('user.invited', function(invite) {
+        var to = invite.to;
+        var from = invite.from;
+        if (!invite.roomId || !to || !from) {
+            console.log('INVALID: user.invited', invite);
+            return;
+        }
+        console.log('user.invited', invite);
 
-        io.sockets.socket(to.socketId).emit('user.invited', invited);
+        [io.sockets.socket(to.socketId), io.sockets.socket(from.socketId)]
+        .forEach(function(socket) {
+            if (socket) {
+                console.log('join roomId=', invite.roomId);
+                socket.join(invite.roomId);
+            }
+        });
+
+        console.log('io.sockets', io.sockets);
+        var room = io.sockets.to(invite.roomId);
+        console.log('room=', room);
+        room.emit('user.invited', invite);
+    });
+    socket.on('user.leftRoom', function(userdata) {
+        if (!userdata.socketId && !userdata.roomId) {
+            console.log('INVALID: user.leftRoom', userdata);
+            return;
+        }
+
+        // ルームから退出する
+        var client = io.sockets.socket(userdata.socketId);
+        console.log('join roomId=', userdata.roomId);
+        client.leave(userdata.roomId);
+
+        userdata.roomId = null;
+        setData(userdata, function() {
+            console.log('emit user.update');
+            io.sockets.emit('user.update', userdata);
+        });
     });
 
+    function createRoomId(from, to) {
+        var base = from.socketId + ':' +
+            to.socketId + ':' +
+            Date.now() +
+            ':mapup'; // salt
+
+        console.log('createRoomId, base=', base);
+        var sha1sum = crypto.createHash('sha1');
+        sha1sum.update(base);
+
+        var shasum = sha1sum.digest('hex');
+        console.log('createRoomId, shasum=', shasum);
+
+        return shasum;
+    }
 
     function setData(userdata, cb) {
+        var list = ['username', 'marker', 'tags', 'imageName', 'roomId'];
         var progress = 0;
-        var maxProgress = 0;
-        ['username', 'marker', 'tags', 'imageName'].forEach(function(prop, i) {
+        var maxProgress = list.length;
+        list.forEach(function(prop, i) {
             if (userdata[prop] !== undefined) {
-                maxProgress++;
+                console.log('setData, prop=', prop);
                 socket.set(prop, userdata[prop], function () {
-                    console.log('setData', arguments);
+                    console.log('setData, set');
                     progress++;
                     if (maxProgress === progress) {
                         cb();
                     }
                 });
+            } else {
+                console.log('setData, undefined prop=', prop);
+                progress++;
+                if (maxProgress === progress) {
+                    cb();
+                }
             }
         });
     }

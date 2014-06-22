@@ -52,6 +52,7 @@ exports.connection = function (client) {
     client.on('join', join);
 
     function removeFeed(type) {
+        console.log('SimpleWebRTC, removeFeed, cliet.room=', client.room, ', client.id=', client.id, 'type=', type);
         io.sockets.in(client.room).emit('remove', {
             id: client.id,
             type: type
@@ -76,6 +77,7 @@ exports.connection = function (client) {
     client.on('leave', removeFeed);
 
     client.on('create', function (name, cb) {
+        console.log('SimpleWebRTC, create', name);
         if (arguments.length == 2) {
             cb = (typeof cb == 'function') ? cb : function () {};
             name = name || uuid();

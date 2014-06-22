@@ -51,6 +51,13 @@ $.extend(Mps.prototype, {
         Mps.log('socketio');
 
         this._socket = io.connect(location.protocol + '//' + location.host + '/');
+        if (Mps.DEBUG) {
+            var _emit = this._socket.emit;
+            this._socket.emit = function() {
+                Mps.log('emit, event=', arguments[0]);
+                _emit.apply(this, arguments);
+            };
+        }
     },
     initFinished: function() {
         var self = this;
@@ -87,64 +94,68 @@ $.extend(Mps.prototype, {
         function addUser(userdata) {
             Mps.log('addUser, userdata=', userdata);
             var user = self.getUserBySocketId(userdata.socketId);
-            if (!user) {
-                userdata.map = self._map;
-                user = createUser(userdata);
-
-                if (user.socketId === _socket.socket.transport.sessid) {
-                    if (self._user) {
-                        // 自分が既に存在する
-                    } else {
-                        self._user = user;
-                        onConnectedMyself(user);
-                        self.r.log.add('あなたのIDは' + user.socketId + 'です。');
-                    }
-
-                    var sendUserdata = user.toUserdata();
-                    Mps.log('addUser, add myelf: ', sendUserdata);
-                    self._socket.emit('user.connect', sendUserdata);
-                } else {
-                    Mps.log('addUser, other');
-                    self.r.log.add('ID[' + user.displayUsername() + '] さんが接続しました。');
-                }
-
-                self._users.push(user);
-                //Mps.log('接続方式: ' + _socket.socket.transport.name);
-            } else {
-                // TODO: 自分自身が接続しなおしたとき。
-                //if (user.socketId === _socket.socket.transport.sessid) {
-                //    var updateUserdata = user.toUserdata();
-                //    self._socket.emit('user.update', updateUserdata);
-                //}
-                // 自分自身
-                //self.r.log.add('[' + userdata.socketId + '] 接続しました。');
-                Mps.log('addUser, 重複するユーザが検出されました。', userdata);
+            if (user) {
+                user.destroy();
+                user = null;
             }
+            userdata.map = self._map;
+
+            if (userdata.socketId === _socket.socket.transport.sessid) {
+                var saved = Mps.User.loadMyself();
+                if (saved) {
+                    saved.socketId = userdata.socketId;
+                    saved.map = self._map;
+                    user = createUser(saved);
+                } else {
+                    user = createUser(userdata);
+                }
+                self.initMyself(user);
+                if (!user.marker.latlng) {
+                    reqGeo(user);
+                } else {
+                    // 再接続の時
+                }
+                self.r.log.add('あなたのIDは' + user.socketId + 'です。');
+
+                var myUserdata = user.toUserdata();
+                self._user = user;
+                Mps.log('addUser, add myself: ', myUserdata);
+                self._socket.emit('user.connect', myUserdata);
+            } else {
+                user = createUser(userdata);
+                Mps.log('addUser, other');
+                self.r.log.add('ID[' + user.displayUsername() + '] さんが接続しました。');
+            }
+
+            self._users.push(user);
+            //Mps.log('接続方式: ' + _socket.socket.transport.name);
 
             return user;
         }
 
-        function onConnectedMyself(user) {
-            self.initMyself(user);
-
+        function reqGeo(user) {
             // Start detect location
             //self.r.spin.show();
             Mps.Geo.current().done(function(pos) {
                 Mps.log('detected: ', pos);
-                // TODO: 接続遅延があった時はself._userいなくてバグるかも
-                self._user.marker.latlng = {
-                    lat: pos.coords.latitude,
-                    lng: pos.coords.longitude,
-                };
-                self._map.setCenter(self._user.marker.latlng);
-                self._map.setZoom(13);
+                if (self._user) {
+                    var latlng = {
+                        lat: pos.coords.latitude,
+                        lng: pos.coords.longitude,
+                    };
+                    self._user.marker.latlng = latlng;
+                    self._map.setCenter(self._user.marker.latlng);
+                    self._map.setZoom(13);
+
+                    var data = {
+                        socketId: self._user.socketId,
+                        marker: latlng
+                    };
+                    self._socket.emit('user.update', data);
+                }
             }).fail(function(e) {
                 Mps.log('Geolocation: ' + e.message, e);
-                self._user.marker.latlng = {
-                    // Osaka
-                    lat: 34.701909,
-                    lng: 135.494977,
-                };
+                // TODO: 失敗した時は？
             }).always(function(e) {
                 //self.r.spin.hide();
             });
@@ -161,6 +172,7 @@ $.extend(Mps.prototype, {
             if (idx >= 0) {
                 user.destroy();
                 if (user.socketId === _socket.socket.transport.sessid) {
+                    // self._user.save()は常に行っているのでしない
                     self._user = null;
                 }
                 self._users.splice(idx, 1);
@@ -223,6 +235,13 @@ $.extend(Mps.prototype, {
             if (self._users.length === 0) {
             }
         });
+        _socket.on('disconnect', function(data) {
+            Mps.log('disconnect', arguments);
+            if (self._requireReconnect) {
+                self._requireReconnect = false;
+                _socket.socket.reconnect();
+            }
+        });
 
         _socket.on('user.list', function(userdataList) {
             Mps.log('user.list', arguments);
@@ -235,9 +254,11 @@ $.extend(Mps.prototype, {
         });
 
         _socket.on('user.connect', function(userdata) {
-            Mps.log('user.connect', arguments);
+            Mps.log('on, user.connect', arguments);
 
-            addUser(userdata);
+            if (userdata.socketId !== _socket.socket.transport.sessid) {
+                addUser(userdata);
+            }
         });
         _socket.on('user.disconnect', function(connection) {
             console.log('user.disconnect', connection.id, self._users);
@@ -253,29 +274,39 @@ $.extend(Mps.prototype, {
         });
 
         _socket.on('user.update', function(userdata) {
-            Mps.log('user.update', userdata);
+            Mps.log('on user.update', userdata);
 
             var user = self.getUserBySocketId(userdata.socketId);
             if (user) {
                 if (userdata.marker) {
                     user.marker.latlng = userdata.marker;
-                    //self.r.log.add('[' + user.displayUsername() + '] さんの位置が更新されました。');
+                    self.r.log.add('[' + user.displayUsername() + '] さんの位置が更新されました。');
                 }
                 if (userdata.username) {
                     user.username = userdata.username;
-                    //self.r.log.add('[' + user.displayUsername() + '] さんの名前が' + userdata.username + 'に更新されました。');
+                    self.r.log.add('[' + user.displayUsername() + '] さんの名前が' + userdata.username + 'に更新されました。');
                 }
                 if (userdata.tags) {
                     user.tags = userdata.tags;
-                    //self.r.log.add('[' + user.displayUsername() + '] さんのタグが修正されました。');
+                    self.r.log.add('[' + user.displayUsername() + '] さんのタグが修正されました。');
                     self.refreshTagList();
                 }
                 if (userdata.imageName) {
                     user.imageName = userdata.imageName;
-                    //self.r.log.add('[' + user.displayUsername() + '] さんの画像が修正されました。');
+                    self.r.log.add('[' + user.displayUsername() + '] さんの画像が修正されました。');
+                }
+                if (userdata.roomId) {
+                    user.roomId = userdata.roomId;
+                    self.r.log.add('[' + user.displayUsername() + '] さんが会話を開始しました。');
+                } else if (userdata.roomId === null && user.roomId) {
+                    user.roomId = null;
+                    self.r.log.add('[' + user.displayUsername() + '] さんが会話を終了しました。');
+                } else {
+                    user.roomId = null;
                 }
 
                 if (self._user === user) {
+                    Mps.log('on user.update, saved data');
                     self._user.save();
                 }
             }
@@ -285,32 +316,15 @@ $.extend(Mps.prototype, {
 
             var to = invite.to;
             var from = invite.from;
+            Mps.log('user.invite, roomId=', invite.roomId);
 
             var dlg = Mps.Dialog('invite');
             if (to.state === 'request') {
                 // 招待されましたダイアログを表示
                 var user = self.getUserBySocketId(from.socketId);
                 dlg.user(user);
-                dlg.on('invite.agree', function(e) {
-                    Mps.log('invite.agree', arguments);
-                    self._socket.emit('user.invited', {
-                        to: {
-                            socketId: from.socketId,
-                            agreed: true,
-                        },
-                        from: to
-                    });
-                    startCall(invite.from.socketId);
-                }).on('invite.disagree', function(e) {
-                    Mps.log('invite.disagree', arguments);
-                    self._socket.emit('user.invited', {
-                        to: {
-                            socketId: from.socketId,
-                            agreed: false,
-                        },
-                        from: to
-                    });
-                }).show();
+                dlg.invite = invite;
+                dlg.show();
             } else if (to.state === 'cancel') {
                 dlg.hide();
             } else {
@@ -318,24 +332,77 @@ $.extend(Mps.prototype, {
             }
         });
         _socket.on('user.invited', function(invite) {
-            Mps.log('user.invited', arguments);
+            Mps.log('user.invited', invite);
 
-            if (invite.to.agreed) {
-                startCall(invite.to.socketId);
+            if (invite.to.agreed && invite.roomId) {
+                self._user.roomId = invite.roomId;
+                Mps.log('user.invited, startCall', invite.roomId);
+
+                // roomIdをbroadcast
+                self._socket.emit('user.update', {
+                    socketId: self._user.socketId,
+                    roomId: invite.roomId
+                });
+                startCall(invite.to.socketId, invite.roomId);
             }
 
             Mps.Dialog('alert').hide();
         });
 
-        function startCall(socketId) {
+        function startCall(socketId, roomId) {
             var user = self.getUserBySocketId(socketId);
             if (user && self._user) {
-                Mps.Dialog('rtc').setSelf(self._user).addUser(user).begin(socketId);
+                Mps.Dialog('rtc').setSelf(self._user).addUser(user).begin(roomId);
             }
         }
+        Mps.Dialog('invite').on('invite.agree', function(e) {
+            var invite = this.invite;
+            Mps.log('invite.agree', arguments);
+            self._socket.emit('user.invited', {
+                roomId: invite.roomId,
+                to: {
+                    socketId: invite.from.socketId,
+                    agreed: true,
+                },
+                from: invite.to
+            });
+            self._user.roomId = invite.roomId;
+
+            // roomIdをbroadcast
+            self._socket.emit('user.update', {
+                socketId: self._user.socketId,
+                roomId: invite.roomId
+            });
+            startCall(invite.from.socketId, invite.roomId);
+        }).on('invite.disagree', function(e) {
+            var invite = this.invite;
+            Mps.log('invite.disagree', arguments);
+            self._socket.emit('user.invited', {
+                roomId: invite.roomId,
+                to: {
+                    socketId: invite.from.socketId,
+                    agreed: false,
+                },
+                from: invite.to
+            });
+        });
+        Mps.Dialog('rtc').on('leftRoom', function(roomId) {
+            Mps.log('leftRoom, disconnect');
+
+            // A-B-Cの３人で接続した後、A,Bが抜けて、A,Cが接続を行うと、
+            // Bが入ってきて３人通話に戻ってしまう不具合がある。(SimpleWebRTCの仕様？理由が謎)
+            // それを回避するため、完全に一度ソケット接続をしなおして状態をリセットするようにする。
+            //self._user.roomId = null;
+            //self._socket.emit('user.leftRoom', {
+            //    socketId: self._user.socketId,
+            //    roomId: roomId,
+            //});
+            self._requireReconnect = true;
+            self._socket.disconnect();
+        });
 
         this.r.$socketDisconnect.click(function(e) {
-            _socket.disconnect();
+            self._socket.disconnect();
         });
 
         this.r.$btnFold.click(function(e) {
@@ -365,7 +432,9 @@ $.extend(Mps.prototype, {
                         });
                     },
                 });
-                self._socket.emit('user.invite', {
+
+                // 招待送信
+                var inviteData = {
                     to: {
                         socketId: socketId,
                         state: 'request',
@@ -374,7 +443,15 @@ $.extend(Mps.prototype, {
                         socketId: self._user.socketId,
                         username: self._user.username,
                     },
-                });
+                };
+                if (user.roomId) {
+                    inviteData.roomId = user.roomId;
+                }
+                self._socket.emit('user.invite', inviteData);
+
+                if (user.infoWindow) {
+                    user.infoWindow.close();
+                }
             }
         };
 
@@ -442,6 +519,48 @@ $.extend(Mps.prototype, {
                 });
             }
         }
+
+        // Username
+        this.r.$formUsername.on('submit', function(e) {
+            e.preventDefault();
+
+            var $this = $(this);
+            var $username = $this.find('*[name="username"]');
+            var val = $username.val();
+            Mps.log('submit, username=' + val);
+
+            if (!self._user) {
+                return;
+            }
+            self._socket.emit('user.update', {
+                socketId: self._user.socketId,
+                username: val,
+            });
+        });
+
+        this.r.$formTags.on('submit', function(e) {
+            e.preventDefault();
+
+            var user = self._user;
+            if (!self._user) {
+                return;
+            }
+            var tag = self.r.$tagsInput.val();
+            self.r.$tagsInput.focus().val('');
+            if (user.tags.indexOf(tag) === -1) {
+                user.tags.push(tag);
+                user.save();
+                self.refreshTags(user);
+
+                // addedtagcallback
+                // update/delete時のサーバへの送信
+                self._socket.emit('user.update', {
+                    socketId: user.socketId,
+                    tags: user.tags,
+                });
+                self.r.$tagsInput.focus();
+            }
+        });
     },
     initMyself: function(user) {
         var self = this;
@@ -459,47 +578,12 @@ $.extend(Mps.prototype, {
         var saved = Mps.User.loadMyself();
         if (saved) {
             Mps.log('  Restore myself');
-            user.marker.latlng = saved.marker.latlng;
+            user.marker.latlng = saved.marker;
             user.username = saved.username;
             user.tags = saved.tags;
         } else {
             Mps.log('  new myself');
         }
-
-        // Username
-        this.r.$formUsername.on('submit', function(e) {
-            e.preventDefault();
-
-            var $this = $(this);
-            var $username = $this.find('*[name="username"]');
-            var val = $username.val();
-            Mps.log('submit, username=' + val);
-
-            self._socket.emit('user.update', {
-                socketId: user.socketId,
-                username: val,
-            });
-        });
-
-        this.r.$formTags.on('submit', function(e) {
-            e.preventDefault();
-
-            var tag = self.r.$tagsInput.val();
-            self.r.$tagsInput.focus().val('');
-            if (user.tags.indexOf(tag) === -1) {
-                user.tags.push(tag);
-                user.save();
-                self.refreshTags(user);
-
-                // addedtagcallback
-                // update/delete時のサーバへの送信
-                self._socket.emit('user.update', {
-                    socketId: user.socketId,
-                    tags: user.tags,
-                });
-                self.r.$tagsInput.focus();
-            }
-        });
     },
     refreshTags: function(user) {
         var self = this;

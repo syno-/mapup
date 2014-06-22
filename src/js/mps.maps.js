@@ -62,6 +62,10 @@ Mps.Maps = (function() {
                 }
                 $('<p>').text(msg).appendTo($root);
             }
+            Mps.log('createInfoWindowMessage, roomId=', user.roomId);
+            if (user.roomId) {
+                $('<p>').text('通話中!').appendTo($root);
+            }
             if (!user.private) {
                 $('<button>').attr('type', 'button')
                 .addClass('btn btn-danger')

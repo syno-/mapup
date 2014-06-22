@@ -192,10 +192,17 @@ Mps.Dialog = (function() {
                 this._users = [];
 
                 var self = this;
+                var rtc = Mps.rtc();
                 this.$title = this._$.find('#rtc-title');
                 this.$selfUsername = this._$.find('#rtc-self-username');
-                this.$btnMute = this._$.find('#rtc-btn-mute');
-                this.$btnVideo = this._$.find('#rtc-btn-video');
+                this.$btnMute = this._$.find('#rtc-btn-mute').click(function(e) {
+                    $(this).attr('disabled', 'disabled');
+                    rtc.setMuted(!rtc.isMuted());
+                });
+                this.$btnVideo = this._$.find('#rtc-btn-video').click(function(e) {
+                    $(this).attr('disabled', 'disabled');
+                    rtc.setVideoEnabled(!rtc.isVideoEnabled());
+                });
                 this.log = new Mps.Log('rtc-chat-log');
                 this.$chatForm = this._$.find('#rtc-chat-form').submit(function(e) {
                     e.preventDefault();
@@ -203,7 +210,7 @@ Mps.Dialog = (function() {
                     var val = self.$chatInput.val();
                     self.$chatInput.val('').focus();
 
-                    var webrtc = Mps.rtc.get().getRTC();
+                    var webrtc = rtc.getRTC();
                     var o = {
                         name: self._self.displayUsername(),
                         imageUrl: self._self.getImageUrl(),
@@ -211,12 +218,17 @@ Mps.Dialog = (function() {
                     };
                     self.log.push(o);
                     var json = JSON.stringify(o);
-                    webrtc.sendDirectlyToAll("text chat", "chat", json);
+                    var channelLabel = self._roomId;
+                    var dataType= "chat";
+                    webrtc.sendDirectlyToAll(channelLabel, dataType, json);
                 });
                 this.$chatInput = this.$chatForm.find('input');
 
-                this.setMute(true);
-                this.setVideoEnabled(true);
+                this._$.on('hide.bs.modal', function(e) {
+                    var webrtc = Mps.rtc().getRTC();
+                    webrtc.leaveRoom();
+                    self.end();
+                });
             },
             /** レイアウト作るためのやつ。消す。 */
             test: function() {
@@ -238,12 +250,18 @@ Mps.Dialog = (function() {
 
                 return this;
             },
-            begin: function(socketId) {
-                this.initSimpleWebRTC(socketId);
+            begin: function(roomId) {
+                this._roomId = roomId;
+                this.initSimpleWebRTC();
+                var rtc = Mps.rtc();
 
                 this.show();
             },
             end: function() {
+                this.log.clear();
+                this._users = [];
+                var rtc = Mps.rtc();
+                //rtc.setLocalVideoEnabled(false);
             },
             removeUser: function(user) {
                 // TODO
@@ -258,34 +276,46 @@ Mps.Dialog = (function() {
                     btn.addClass('btn btn-default');
                     icon.addClass('glyphicon glyphicon-volume-up');
                 }
-                this._mute = is;
             },
             setVideoEnabled: function(is) {
                 var btn = this.$btnVideo.removeClass();
                 var icon = btn.children().removeClass();
                 if (is) {
-                    btn.addClass('btn btn-danger');
+                    btn.addClass('btn btn-default');
                     icon.addClass('glyphicon glyphicon-facetime-video');
                 } else {
-                    btn.addClass('btn btn-default');
+                    btn.addClass('btn btn-danger');
                     icon.addClass('glyphicon glyphicon-facetime-video');
                 }
                 this._videoEnabled = is;
             },
-            initSimpleWebRTC: function(socketId) {
+            initSimpleWebRTC: function() {
                 var self = this;
-                var rtc = Mps.rtc.get();
+                var rtc = Mps.rtc();
                 var webrtc = rtc.getRTC();
-                webrtc.on('readyToCall', function () {
-                    Mps.log('initSimpleWebRTC', socketId);
-                    webrtc.joinRoom(socketId);
-                });
-                webrtc.on('joinedRoom', function () {
-                    webrtc.sendDirectlyToAll("text chat", "chat", ""); // omajinai
-                });
-                webrtc.on('channelMessage', function (peer, label, data, ch, ev) {
-                    if (label == 'text chat' && data.type == 'chat') {
-                        Mps.log('channelMessage');
+
+                this.setMute(rtc.isMuted());
+                this.setVideoEnabled(rtc.isVideoEnabled());
+
+                if (rtc.isReadyToCall()) {
+                    // TODO: RoomIdどうする？
+                    webrtc.joinRoom(self._roomId);
+                } else {
+                    rtc.on('readyToCall', function(e) {
+                        webrtc.joinRoom(self._roomId);
+                    });
+                }
+                rtc.on('audio.mute', function(e, isMuted) {
+                    console.log('audio.mute, isMuted=', isMuted);
+                    self.setMute(isMuted);
+                    self.$btnMute.removeAttr('disabled');
+                }).on('video', function(e, isEnabled) {
+                    console.log('video, isEnabled=', isEnabled);
+                    self.setVideoEnabled(isEnabled);
+                    self.$btnVideo.removeAttr('disabled');
+                }).on('channelMessage', function(peer, channelLabel, data, ch, ev) {
+                    Mps.log('channelMessage, args=', arguments);
+                    if (channelLabel == self._roomId && data.type == 'chat') {
                         try {
                             var json = JSON.parse(data.payload);
                             self.log.push(json);
@@ -293,47 +323,14 @@ Mps.Dialog = (function() {
                             Mps.log('not a json', e);
                         }
                     }
-                });
-                this._$.on('hide.bs.modal', function(e) {
-                    webrtc.leaveRoom();
-                });
-
-                // audio
-                this._mute = true;
-                this.setMute(this._mute);
-                webrtc.on('audioOff', function (event) {
-                    self.setMute(true);
-                });
-                webrtc.on('audioOn', function (event) {
-                    self.setMute(false);
-                });
-
-                // video
-                this._videoEnabled = true;
-                this.setVideoEnabled(this._videoEnabled);
-                webrtc.on('videoOff', function (event) {
-                    self.setVideoEnabled(false);
-                });
-                webrtc.on('videoOn', function (event) {
-                    self.setVideoEnabled(true);
+                }).on('joinedRoom', function(roomId) {
+                    this.getRTC().sendDirectlyToAll(roomId, "chat", ""); // omajinai
+                    //rtc.setLocalVideoEnabled(true);
+                }).on('leftRoom', function(roomId) {
+                    self.emit('leftRoom', [roomId]);
+                    self._roomId = null;
                 });
             },
-            ///**
-            // * @param {HTMLElement} _text
-            // */
-            //sendChat: function(_text) {
-            //    //var context = document.getElementById("snap").getContext("2d");
-            //    //context.beginPath();
-            //    //context.rect(15, 0, 90, 90);
-            //    //context.clip();
-            //    //context.drawImage(document.getElementById("localVideo"),0, 0, 120, 90);
-            //    //var snap = document.getElementById("snap").toDataURL();
-            //    //var html = '<div class=chatText><img width="60" src="' + snap + '">' + _text.value + '</div>';
-            //    var webrtc = Mps.rtc.get().getRTC();
-            //    webrtc.sendDirectlyToAll("text chat", "chat", html);
-            //    //document.getElementById("chatLog").innerHTML += html;
-            //    //_text.value = '';
-            //},
         }),
         alert: DialogProto.extend({
             init: function(dlgId) {
@@ -377,6 +374,7 @@ Mps.Dialog = (function() {
             init: function(dlgId) {
                 this._super.apply(this, arguments);
                 var self = this;
+                this.invite = null;
                 this._isAgreed = false;
                 var $agree = $('#invite-agree').click(function(e) {
                     Mps.log('invite, agree');
@@ -395,6 +393,7 @@ Mps.Dialog = (function() {
                     } else {
                         self.emit('invite.disagree', [e]);
                     }
+                    self._isAgreed = false;
                 });
                 this.$title = $('#invite-title');
             },
